@@ -38,6 +38,7 @@ class read_project(object):
         Returns `filename, (img, labels, prediction)`
         prediction is None if no prediction was made
         '''
+        print('ilasik version', self.version)
         if self.version == '0.5_ilastik':
             return self.iter_v05_ilastik()
 
@@ -78,13 +79,20 @@ class read_project(object):
                 labels = np.zeros([X, Y, Z, C])
             else:
                 labels = np.zeros_like(img)
-                if labels.ndim == 3:
+                while labels.ndim < 4:
                     labels = labels[..., np.newaxis]
 
             for block in f.get('/PixelClassification/LabelSets/{}'.format(dset_name)).values():
                 slices = re.findall('([0-9]+):([0-9]+)', block.attrs['blockSlice'].decode('ascii'))
                 slices = [slice(int(start), int(end)) for start, end in slices]
-                labels[slices[0], slices[1], slices[2], slices[3]] = block[()]
+                if len(slices) == 4:
+                    labels[slices[0], slices[1], slices[2], slices[3]] = block[()]
+                elif len(slices) == 3:
+                    labels[slices[0], slices[1], slices[2], 0] = block[()]
+                elif len(slices) == 2:
+                    labels[slices[0], slices[1], 0, 0] = block[()]
+                else:
+                    assert NotImplemented
 
             yield path, (img, labels, None)
 

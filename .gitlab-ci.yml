@@ -1,0 +1,19 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - export LANG=C.UTF-8
+  - PATH=${HOME}/.local/bin/:$PATH
+
+stages:
+  - test
+  - deploy
+
+install:
+  image: yapic-nopython
+  stage: test
+  script:
+    - pip install --process-dependency-links ${CI_PROJECT_DIR}
+    - pip install nose
+    - nosetests ${CI_PROJECT_DIR}/pyilastik/tests/test.py
+

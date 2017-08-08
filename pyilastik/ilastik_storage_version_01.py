@@ -13,10 +13,11 @@ import pyilastik.utils as utils
 # labels shape: (?,?,H,W,1), e.g. (1, 1, 2098, 2611, 1), 0 == unlabeled
 # prediction shape: (?,?,H,W,L), e.g. (1, 1, 2098, 2611, 3)
 class IlastikStorageVersion01(object):
-    def __init__(self, h5_handle, image_path=None, prediction=False):
+    def __init__(self, h5_handle, image_path=None, prediction=False, skip_image=False):
         self.prediction = prediction
         self.f = h5_handle
         self.image_path = image_path
+        self.skip_image = skip_image
 
 
     def __iter__(self):
@@ -41,7 +42,6 @@ class IlastikStorageVersion01(object):
         prediction is None if no prediction was made
         '''
         f = self.f
-        skip_image = False
 
         lane = 'lane{:04}'.format(i)
         dset_name = 'labels{:03}'.format(i)
@@ -56,7 +56,7 @@ class IlastikStorageVersion01(object):
 
         ilp_path, _ = os.path.split(f.filename)
 
-        if skip_image:
+        if self.skip_image:
             img = None
         else:
             if os.path.isfile(path):

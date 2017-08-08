@@ -12,10 +12,11 @@ import skimage.io
 # labels shape: (?,?,H,W,1), e.g. (1, 1, 2098, 2611, 1), 0 == unlabeled
 # prediction shape: (?,?,H,W,L), e.g. (1, 1, 2098, 2611, 3)
 class IlastikVersion05(object):
-    def __init__(self, h5_handle, image_path=None, prediction=False):
+    def __init__(self, h5_handle, image_path=None, prediction=False, skip_image=False):
         self.prediction = prediction
         self.f = h5_handle
         self.image_path = image_path
+        self.skip_image = skip_image
 
 
     def __getitem__(self, i):
@@ -27,7 +28,7 @@ class IlastikVersion05(object):
         dset = f.get('/DataSets/dataItem{:02}'.format(i))
 
         path = utils.basename(dset.attrs['fileName'].decode('ascii'))
-        img = np.array(dset.get('data'))
+        img = np.array(dset.get('data')) if not self.skip_image else None
         labels = np.array(dset.get('labels/data'))
 
         if self.prediction:

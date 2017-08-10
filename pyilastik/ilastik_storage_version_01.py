@@ -1,5 +1,6 @@
 import os
 import re
+import functools
 import itertools
 import warnings
 
@@ -19,16 +20,15 @@ class IlastikStorageVersion01(object):
         self.image_path = image_path
         self.skip_image = skip_image
 
+        assert self.f.get('/Input Data/StorageVersion')[()].decode() == '0.2'
+
 
     def __iter__(self):
         '''
         Returns `filename, (img, labels, prediction)`
         prediction is None if no prediction was made
         '''
-        f = self.f
-        assert f.get('/Input Data/StorageVersion')[()].decode() == '0.2'
-
-        for dset_name in f.get('/PixelClassification/LabelSets').keys():
+        for dset_name in self.f.get('/PixelClassification/LabelSets').keys():
             i = re.search('[0-9]+$', dset_name).group(0)
 
             res = self[int(i)]
@@ -36,11 +36,36 @@ class IlastikStorageVersion01(object):
                 yield res
 
 
+    @functools.lru_cache(1)
+    def image_path_list(self):
+        '''
+        Returns the list of path to the image files on the original file system.
+        '''
+        path_list = []
+        for dset_name in self.f.get('/PixelClassification/LabelSets').keys():
+            i = re.search('[0-9]+$', dset_name).group(0)
+            i = int(i)
+
+            lane = 'lane{:04}'.format(i)
+            dset_name = 'labels{:03}'.format(i)
+
+            path = self.f.get('/Input Data/infos/{lane}/Raw Data/filePath'.format(lane=lane))
+            path = path[()].decode()
+
+            path_list.append(path)
+
+        return path_list
+
+
     def __getitem__(self, i):
         '''
         Returns `filename, (img, labels, prediction)` for the i'th image
         prediction is None if no prediction was made
         '''
+        if type(i) == str:
+            idx  = self.image_path_list().index(i)
+            return self[idx]
+
         f = self.f
 
         lane = 'lane{:04}'.format(i)
@@ -72,20 +97,25 @@ class IlastikStorageVersion01(object):
 
         prediction = None # TODO
 
-        if skip_image:
+        if self.skip_image:
             # 1st get the (approximate) labeled image size
             slice_list = []
             for block in f.get('/PixelClassification/LabelSets/{}'.format(dset_name)).values():
                 slices = re.findall('([0-9]+):([0-9]+)', block.attrs['blockSlice'].decode('ascii'))
                 slice_list.append(slices)
 
-            slice_list = np.array(slice_list)
-            X = np.amax(slice_list[:,0,1])
-            Y = np.amax(slice_list[:,1,1])
-            Z = np.amax(slice_list[:,2,1])
-            C = np.amax(slice_list[:,3,1])
+            if len(slice_list) == 0:
+                warnings.warn('No labels found in Ilastik file - cannot approximate image size')
+                labels = np.zeros([0, 0, 0, 0])
+            else:
+                slice_list = np.array(slice_list).astype('int')
 
-            labels = np.zeros([X, Y, Z, C])
+                X = np.amax(slice_list[:,0,1])
+                Y = np.amax(slice_list[:,1,1])
+                Z = np.amax(slice_list[:,2,1])
+                C = np.amax(slice_list[:,3,1])
+
+                labels = np.zeros([X, Y, Z, C])
         else:
             labels = np.zeros_like(img)
 

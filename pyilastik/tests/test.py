@@ -30,7 +30,8 @@ def test_ilastik0122_mac():
     localpath = os.path.join(path, 'purkinjetest')
     p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
     img_path = os.path.join(localpath, 'images')
-    ilp = pyilastik.read_project(p, image_path=img_path)
+    ilp = pyilastik.read_project(p, image_path=img_path, skip_image=True)
+    #ilp = pyilastik.read_project(p)
 
     (_, (_, labels, _)) = ilp['images/769_cerebellum_5M41_subset_1.tif']
     assert set(np.unique(labels[:])) == {0, 1, 2, 3, 4}  # all 4 labels

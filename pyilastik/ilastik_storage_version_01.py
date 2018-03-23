@@ -28,6 +28,7 @@ class IlastikStorageVersion01(object):
         Returns `filename, (img, labels, prediction)`
         prediction is None if no prediction was made
         '''
+        
         for dset_name in self.f.get('/PixelClassification/LabelSets').keys():
             i = re.search('[0-9]+$', dset_name).group(0)
 
@@ -141,4 +142,3 @@ class IlastikStorageVersion01(object):
 
     def __len__(self):
         return len(self.f.get('/PixelClassification/LabelSets').keys())
-

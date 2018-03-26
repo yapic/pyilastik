@@ -9,7 +9,8 @@ path = os.path.join(os.path.dirname(__file__), 'data')
 def test_ilastik_version05():
     print(path)
     p = os.path.join(path, 'ilastik-0.5.ilp')
-    for fname, (img, labels, prediction) in pyilastik.read_project(p, image_path=path):
+    for fname, (img, labels, prediction) in \
+            pyilastik.read_project(p, image_path=path):
         np.testing.assert_equal(fname, 'ilastik-test-2-4-8.tif')
         np.testing.assert_array_equal(img.shape, (1, 1, 4, 2, 1))
         np.testing.assert_array_equal(img.shape, labels.shape)
@@ -18,11 +19,57 @@ def test_ilastik_version05():
 
 def test_ilastik_storage_version01():
     p = os.path.join(path, 'ilastik-1.2.ilp')
-    for fname, (img, labels, prediction) in pyilastik.read_project(p,image_path=path):
+    for fname, (img, labels, prediction) in \
+            pyilastik.read_project(p, image_path=path):
         np.testing.assert_equal(fname, 'ilastik-test-2-4-8.tif')
         np.testing.assert_array_equal(img.shape, (8, 4, 2, 1))
         np.testing.assert_array_equal(img.shape, labels.shape)
         assert prediction is None
+
+
+def test_2channels_1z_2classes():
+    localpath = os.path.join(path, '2channels_1z_2classes')
+    p = os.path.join(localpath, 'ilastik-1.2.2post1_mac.ilp')
+    img_path = os.path.join(localpath, 'images')
+    ilp = pyilastik.read_project(p, image_path=img_path, skip_image=True)
+    (_, (_, labels, _)) = ilp['57x54_2channels_1z_2classes.tif']
+    print(labels.shape)
+    assert set(np.unique(labels[:,:4,0,0])) == {1.}
+    assert set(np.unique(labels[:,4:,0,0])) == {2.}
+
+
+
+def test_1channel_1z_2classes():
+    localpath = os.path.join(path, '1channel_1z_2classes')
+    p = os.path.join(localpath, 'ilastik_1.2.2post1_mac.ilp')
+    img_path = os.path.join(localpath, 'images')
+    ilp = pyilastik.read_project(p, image_path=img_path, skip_image=True)
+    (_, (_, labels, _)) = ilp['57x54_1channel_1z_2classes.tif']
+
+    assert set(np.unique(labels[:18, :, 0, 0][:])) == {2.}
+    assert set(np.unique(labels[18:, :21, 0, 0][:])) == {1.}
+    assert set(np.unique(labels[18:, 21:, 0, 0][:])) == {0.}
+
+
+def test_init_labelmat_from_labels():
+    localpath = os.path.join(path, '1channel_1z_2classes')
+    p = os.path.join(localpath, 'ilastik_1.2.2post1_mac.ilp')
+    ilp = pyilastik.read_project(p, skip_image=True)
+    mat = ilp._init_labelmat_from_labels(0)
+    assert mat.shape == (54, 57, 1, 1)
+
+    localpath = os.path.join(path, '2channels_1z_2classes')
+    p = os.path.join(localpath, 'ilastik-1.2.2post1_mac.ilp')
+    img_path = os.path.join(localpath, 'images')
+    ilp = pyilastik.read_project(p, skip_image=True)
+    mat = ilp._init_labelmat_from_labels(0)
+    assert mat.shape == (54, 57, 1, 1)
+
+    p = os.path.join(path, 'ilastik-1.2.ilp')
+    img_path = path
+    ilp = pyilastik.read_project(p, skip_image=True)
+    mat = ilp._init_labelmat_from_labels(0)
+    assert mat.shape == (8, 4, 2, 1)
 
 
 def test_ilastik0122_mac():
@@ -31,7 +78,6 @@ def test_ilastik0122_mac():
     p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
     img_path = os.path.join(localpath, 'images')
     ilp = pyilastik.read_project(p, image_path=img_path, skip_image=True)
-    #ilp = pyilastik.read_project(p)
 
     (_, (_, labels, _)) = ilp['images/769_cerebellum_5M41_subset_1.tif']
     assert set(np.unique(labels[:])) == {0, 1, 2, 3, 4}  # all 4 labels
@@ -40,7 +86,8 @@ def test_ilastik0122_mac():
     assert set(np.unique(labels[:])) == {0, 1, 2, 3, 4}  # all 4 labels
 
     (_, (_, labels, _)) = ilp['images/667_cerebellum_5M53_subset_3.tif']
-    assert set(np.unique(labels[:])) == {0}  # all no labels
+    print(np.unique(labels[:]))
+    assert set(np.unique(labels[:])) == set([])  # all no labels
 
     (_, (_, labels, _)) = ilp['images/628_cerebellum_5M46_subset_1.tif']
     assert set(np.unique(labels[:])) == {0, 2, 3, 4}  # without label 1

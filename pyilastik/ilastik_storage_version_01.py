@@ -135,7 +135,6 @@ class IlastikStorageVersion01(object):
         slice_list = []
 
         for block in self._get_blocks(item_index):
-            print(block.attrs['blockSlice'].decode('ascii'))
             slices = re.findall('([0-9]+):([0-9]+)',
                                 block.attrs['blockSlice'].decode('ascii'))
             slice_list.append(slices)

@@ -51,25 +51,23 @@ def test_1channel_1z_2classes():
     assert set(np.unique(labels[18:, 21:, 0, 0][:])) == {0.}
 
 
-def test_init_labelmat_from_labels():
+def test_shape_of_labelmatrix():
     localpath = os.path.join(path, '1channel_1z_2classes')
     p = os.path.join(localpath, 'ilastik_1.2.2post1_mac.ilp')
     ilp = pyilastik.read_project(p, skip_image=True)
-    mat = ilp._init_labelmat_from_labels(0)
-    assert mat.shape == (54, 57, 1, 1)
+    mat_shape = ilp.shape_of_labelmatrix(0)
+    assert mat_shape == (54, 57, 1, 1)
 
     localpath = os.path.join(path, '2channels_1z_2classes')
     p = os.path.join(localpath, 'ilastik-1.2.2post1_mac.ilp')
-    img_path = os.path.join(localpath, 'images')
     ilp = pyilastik.read_project(p, skip_image=True)
-    mat = ilp._init_labelmat_from_labels(0)
-    assert mat.shape == (54, 57, 1, 1)
+    mat_shape = ilp.shape_of_labelmatrix(0)
+    assert mat_shape == (54, 57, 1, 1)
 
     p = os.path.join(path, 'ilastik-1.2.ilp')
-    img_path = path
     ilp = pyilastik.read_project(p, skip_image=True)
-    mat = ilp._init_labelmat_from_labels(0)
-    assert mat.shape == (8, 4, 2, 1)
+    mat_shape = ilp.shape_of_labelmatrix(0)
+    assert mat_shape == (8, 4, 2, 1)
 
 
 def test_ilastik0122_mac():

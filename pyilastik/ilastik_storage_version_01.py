@@ -26,7 +26,11 @@ class IlastikStorageVersion01(object):
     def __iter__(self):
         '''
         Returns `filename, (img, labels, prediction)`
+
         prediction is None if no prediction was made
+        labels is a 4D matrix in order (X, Y, Z, C) where C size of C dimension
+        is always 1 (only one label channel implemented, i.e.
+        currently no overlapping label regions supported)
         '''
 
         for dset_name in self.f.get('/PixelClassification/LabelSets').keys():
@@ -102,7 +106,7 @@ class IlastikStorageVersion01(object):
 
         if self.skip_image:
             # 1st get the (approximate) labeled image size
-            labels = self._init_labelmat_from_labels(i)
+            labels = np.zeros(self.shape_of_labelmatrix(i))
 
         else:
             labels = np.zeros_like(img)
@@ -127,10 +131,16 @@ class IlastikStorageVersion01(object):
 
         return original_path, (img, labels, None)
 
-    def _init_labelmat_from_labels(self, item_index):
+    def shape_of_labelmatrix(self, item_index):
         '''
-        image dimensions are retrieved from label data
-        empty 4D label matrix of retrieved dimensions (xyzc)is returned
+        Label matrix shape is retrieved from label data
+        always 4 dimensions in xyzc order.
+
+        Label matrix shape does not always equal corresponding image shape.
+        Label matrix shape is always smaller or equal to corresponding
+        image shape.
+
+        If no labels exist, label matrix shape is (0, 0, 0, 0)
         '''
         slice_list = []
 
@@ -143,7 +153,7 @@ class IlastikStorageVersion01(object):
             msg = 'No labels found in Ilastik file - ' +\
                   'cannot approximate image size'
             warnings.warn(msg)
-            labels = np.zeros([0, 0, 0, 0])
+            labelmat_shape = (0, 0, 0, 0)
 
         else:
             slice_list = np.array(slice_list).astype('int')
@@ -163,9 +173,9 @@ class IlastikStorageVersion01(object):
             Z = np.amax(slice_list[:, 2, 1])
             C = np.amax(slice_list[:, 3, 1])
 
-            labels = np.zeros([X, Y, Z, C])
+            labelmat_shape = (X, Y, Z, C)
 
-        return labels
+        return labelmat_shape
 
     def _get_blocks(self, item_index):
         dset_name = 'labels{:03}'.format(item_index)

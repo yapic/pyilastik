@@ -15,5 +15,4 @@ install:
   script:
     - pip install --process-dependency-links ${CI_PROJECT_DIR}
     - pip install nose
-    - nosetests ${CI_PROJECT_DIR}/pyilastik/tests/test.py
-
+    - nosetests ${CI_PROJECT_DIR}/.

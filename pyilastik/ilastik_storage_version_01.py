@@ -113,34 +113,25 @@ class IlastikStorageVersion01(object):
 
         while img is not None and img.ndim < 4:
             img = img[..., np.newaxis]
-        while labels.ndim < 4:
-            labels = labels[..., np.newaxis]
-
+        
         for block in self._get_blocks(i):
             slices = re.findall('([0-9]+):([0-9]+)',
                                 block.attrs['blockSlice'].decode('ascii'))
             slices = [slice(int(start), int(end)) for start, end in slices]
-            if len(slices) == 4:
-                labels[slices[0], slices[1], slices[2], slices[3]] = block[()]
-            elif len(slices) == 3:
-                labels[slices[0], slices[1], slices[2], 0] = block[()]
-            elif len(slices) == 2:
-                labels[slices[0], slices[1], 0, 0] = block[()]
-            else:
-                raise NotImplemented
+            labels[slices] = block[()]
 
         return original_path, (img, labels, None)
 
     def shape_of_labelmatrix(self, item_index):
         '''
-        Label matrix shape is retrieved from label data
-        always 4 dimensions in xyzc order.
+        Label matrix shape is retrieved from label data.
+        Dimension order is according to self.axorder_labels()
 
         Label matrix shape does not always equal corresponding image shape.
         Label matrix shape is always smaller or equal to corresponding
         image shape.
 
-        If no labels exist, label matrix shape is (0, 0, 0, 0)
+        If no labels exist, label matrix shape is 0 in all dimensions.
         '''
         slice_list = []
 
@@ -153,29 +144,31 @@ class IlastikStorageVersion01(object):
             msg = 'No labels found in Ilastik file - ' +\
                   'cannot approximate image size'
             warnings.warn(msg)
-            labelmat_shape = (0, 0, 0, 0)
+            ndims = len(self.axorder_labels())
+            labelmat_shape = np.zeros((ndims,), dtype='int')
 
         else:
             slice_list = np.array(slice_list).astype('int')
             n_regions, n_dims, _ = slice_list.shape
 
-            # if z dimension is missing (if images are 2d), add z dimension of
-            # size 1
-            if n_dims != 4:
-                channel_slice = np.zeros((n_regions, 1, 2), dtype='int')
-                channel_slice[:, :, 1] = 1
-                # add z dimension
-                slice_list = np.concatenate((slice_list, channel_slice),
-                                            axis=1)
-
-            X = np.amax(slice_list[:, 0, 1])
-            Y = np.amax(slice_list[:, 1, 1])
-            Z = np.amax(slice_list[:, 2, 1])
-            C = np.amax(slice_list[:, 3, 1])
-
-            labelmat_shape = (X, Y, Z, C)
-
+            labelmat_shape = np.amax(slice_list[:, :, 1], axis=0)
         return labelmat_shape
+
+    def axorder_pixel_img(self):
+        '''
+        axis order of pixel images
+        '''
+        path = 'Input Data/infos/lane0000/Raw Data/axisorder'
+        return self.f.get(path)[()].decode()
+
+    def axorder_labels(self):
+        '''
+        axis order in label blockslices
+        '''
+        if 'z' in self.axorder_pixel_img():
+            return 'zyxc'
+        else:
+            return 'yxc'
 
     def _get_blocks(self, item_index):
         dset_name = 'labels{:03}'.format(item_index)

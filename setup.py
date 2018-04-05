@@ -16,12 +16,13 @@ def readme():
 setup(name='pyilastik',
       version='0.0.1',
       description='Read ilastik labels in python',
-#      long_description=readme(),
       author='Manuel Schoelling',
       author_email='manuel.schoelling@dzne.de',
       packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
       zip_safe=False,
       install_requires=reqs,
+      dependency_links=[
+        'git+http://animate-x3.dzne.ds/idaf/tiff.git@master#egg=bigtiff-0.1.0',
+      ],
       test_suite='nose.collector',
       tests_require=['nose', 'coverage', 'nose-timer', 'nose-deadline'])
-

@@ -4,7 +4,6 @@ import itertools
 
 import h5py
 import numpy as np
-import skimage.io
 
 from pyilastik.ilastik_version_05 import IlastikVersion05
 from pyilastik.ilastik_storage_version_01 import IlastikStorageVersion01 # for ilastik 1.2
@@ -33,4 +32,3 @@ def read_project(ilastik_file, image_path=None, prediction=False, skip_image=Fal
             return IlastikVersion05(f, image_path, prediction, skip_image)
 
     raise UnknownIlastikVersion('Unknown ilastik version v{}. I only understand ilastik v0.5 and ilastik storage version v0.1 (ilastik v1.2.0)!'.format(format))
-

@@ -1,12 +1,6 @@
-import os
 import re
-import itertools
-
 import pyilastik.utils as utils
-
-import h5py
 import numpy as np
-import skimage.io
 
 # image shape: (?,?,H,W,C), e.g. (1, 1, 2098, 2611, 3)
 # labels shape: (?,?,H,W,1), e.g. (1, 1, 2098, 2611, 1), 0 == unlabeled
@@ -51,4 +45,3 @@ class IlastikVersion05(object):
 
     def __len__(self):
         return len(self.f.get('DataSets'))
-

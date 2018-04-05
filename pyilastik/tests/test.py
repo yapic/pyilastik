@@ -34,8 +34,8 @@ def test_2channels_1z_2classes():
     ilp = pyilastik.read_project(p, image_path=img_path, skip_image=True)
     (_, (_, labels, _)) = ilp['57x54_2channels_1z_2classes.tif']
     print(labels.shape)
-    assert set(np.unique(labels[:, :4, 0])) == {1.}
-    assert set(np.unique(labels[:, 4:, 0])) == {2.}
+    assert set(np.unique(labels[0, :, :4, 0])) == {1.}
+    assert set(np.unique(labels[0, :, 4:, 0])) == {2.}
 
 
 def test_1channel_1z_2classes():
@@ -45,9 +45,9 @@ def test_1channel_1z_2classes():
     ilp = pyilastik.read_project(p, image_path=img_path, skip_image=True)
     (_, (_, labels, _)) = ilp['57x54_1channel_1z_2classes.tif']
 
-    assert set(np.unique(labels[:18, :, 0][:])) == {2.}
-    assert set(np.unique(labels[18:, :21, 0][:])) == {1.}
-    assert set(np.unique(labels[18:, 21:, 0][:])) == {0.}
+    assert set(np.unique(labels[0, :18, :, 0][:])) == {2.}
+    assert set(np.unique(labels[0, 18:, :21, 0][:])) == {1.}
+    assert set(np.unique(labels[0, 18:, 21:, 0][:])) == {0.}
 
 
 def test_shape_of_labelmatrix():
@@ -68,7 +68,6 @@ def test_shape_of_labelmatrix():
     ilp = pyilastik.read_project(p, skip_image=True)
     mat_shape = ilp.shape_of_labelmatrix(0)
     assert_array_equal(mat_shape, np.array((8, 4, 2, 1)))
-
 
 
 def test_ilastik0122_mac():

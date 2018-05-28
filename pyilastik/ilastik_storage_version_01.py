@@ -3,13 +3,27 @@ import re
 import functools
 import warnings
 import numpy as np
-import skimage.io
-
+from bigtiff import Tiff
 import pyilastik.utils as utils
 
 # image shape: (?,?,H,W,C), e.g. (1, 1, 2098, 2611, 3)
 # labels shape: (?,?,H,W,1), e.g. (1, 1, 2098, 2611, 1), 0 == unlabeled
 # prediction shape: (?,?,H,W,L), e.g. (1, 1, 2098, 2611, 3)
+
+
+def imread(path):
+    '''
+    reads tiff image in dimension order zyxc
+    '''
+
+    slices = Tiff.memmap_tcz(path)
+
+    img = []
+    for C in range(slices.shape[1]):
+        img.append(np.stack([s for s in slices[0, C, :]]))
+    img = np.stack(img)
+    img = np.moveaxis(img, (0, 1, 2, 3), (3, 0, 1, 2))
+    return img
 
 
 class IlastikStorageVersion01(object):
@@ -28,9 +42,13 @@ class IlastikStorageVersion01(object):
         Returns `filename, (img, labels, prediction)`
 
         prediction is None if no prediction was made
-        labels is a 4D matrix in order (X, Y, Z, C) where C size of C dimension
+
+        img is a 4D matrix of pixel values in order (Z, Y, X, C) or None
+
+        labels is a 4D matrix in order (Z, Y, X, C) where C size of C dimension
         is always 1 (only one label channel implemented, i.e.
         currently no overlapping label regions supported)
+        The shape of labels is equal or smaller to the shape of img
         '''
 
         for dset_name in self.f.get('/PixelClassification/LabelSets').keys():
@@ -72,75 +90,70 @@ class IlastikStorageVersion01(object):
             return self[idx]
 
         f = self.f
-
         lane = 'lane{:04}'.format(i)
-
         path = f.get(
             '/Input Data/infos/{lane}/Raw Data/filePath'.format(lane=lane))
         path = path[()].decode()
         original_path = path
+
+        prediction = None  # TODO
+
+        # 1st get the (approximate) labeled image size
+        labels = np.zeros(self.shape_of_labelmatrix(i))
+
+        for block in self._get_blocks(i):
+            slices = re.findall('([0-9]+):([0-9]+)',
+                                block.attrs['blockSlice'].decode('ascii'))
+            slices = [slice(int(start), int(end)) for start, end in slices]
+            labels[slices] = block[()]
+
+        n_dims = len(labels.shape)
+        msg = 'dimensions of labelmatrix should be 4 (zyxc) or 3 (yxc)'
+        assert n_dims in [3, 4], msg
+
+        if n_dims == 3:
+            # add z dimension if missing
+            labels = np.expand_dims(labels, axis=0)
+
+        if self.skip_image:
+            return original_path, (None, labels, prediction)
 
         fname = utils.basename(path)
         if self.image_path is not None:
             path = os.path.join(self.image_path, fname)
 
         ilp_path, _ = os.path.split(f.filename)
-
-        if self.skip_image:
-            img = None
+        if os.path.isfile(path):
+            path = path
+        elif os.path.isfile(os.path.join(ilp_path, fname)):
+            path = os.path.join(ilp_path, fname)
+            warnings.warn(
+                'Loading file from ilp file path {}'.format(path))
         else:
-            if os.path.isfile(path):
-                path = path
-            elif os.path.isfile(os.path.join(ilp_path, fname)):
-                path = os.path.join(ilp_path, fname)
-                warnings.warn(
-                    'Loading file from ilp file path {}'.format(path))
-            else:
-                warnings.warn(
-                    '!!! File {} not found. Skipping...'.format(path))
-                return None
+            warnings.warn(
+                '!!! File {} not found. Skipping pixelimage...'.format(path))
+            return original_path, (None, labels, prediction)
 
-            img = skimage.io.imread(path)
+        img = imread(path)
 
-        prediction = None # TODO
+        # pad labelmatrix to same size as image
+        padding = [(0, d2-d1) for d2, d1 in zip(img.shape, labels.shape)]
+        padding[-1] = (0, 0)  # set padding for channel axis to 0
+        labels = np.pad(labels, padding, mode='constant',
+                        constant_values=0)
 
-        if self.skip_image:
-            # 1st get the (approximate) labeled image size
-            labels = np.zeros(self.shape_of_labelmatrix(i))
-
-        else:
-            labels = np.zeros_like(img)
-
-        while img is not None and img.ndim < 4:
-            img = img[..., np.newaxis]
-        while labels.ndim < 4:
-            labels = labels[..., np.newaxis]
-
-        for block in self._get_blocks(i):
-            slices = re.findall('([0-9]+):([0-9]+)',
-                                block.attrs['blockSlice'].decode('ascii'))
-            slices = [slice(int(start), int(end)) for start, end in slices]
-            if len(slices) == 4:
-                labels[slices[0], slices[1], slices[2], slices[3]] = block[()]
-            elif len(slices) == 3:
-                labels[slices[0], slices[1], slices[2], 0] = block[()]
-            elif len(slices) == 2:
-                labels[slices[0], slices[1], 0, 0] = block[()]
-            else:
-                raise NotImplemented
-
-        return original_path, (img, labels, None)
+        return original_path, (img, labels, prediction)
 
     def shape_of_labelmatrix(self, item_index):
         '''
-        Label matrix shape is retrieved from label data
-        always 4 dimensions in xyzc order.
+        Label matrix shape is retrieved from label data.
+        Dimension order is according to self.axorder_labels()
 
         Label matrix shape does not always equal corresponding image shape.
         Label matrix shape is always smaller or equal to corresponding
         image shape.
 
-        If no labels exist, label matrix shape is (0, 0, 0, 0)
+        If no labels exist, label matrix shape is 0 in all dimensions.
         '''
         slice_list = []
 
@@ -153,28 +166,14 @@ class IlastikStorageVersion01(object):
             msg = 'No labels found in Ilastik file - ' +\
                   'cannot approximate image size'
             warnings.warn(msg)
-            labelmat_shape = (0, 0, 0, 0)
+
+            labelmat_shape = np.zeros((4,), dtype='int')
 
         else:
             slice_list = np.array(slice_list).astype('int')
             n_regions, n_dims, _ = slice_list.shape
 
-            # if z dimension is missing (if images are 2d), add z dimension of
-            # size 1
-            if n_dims != 4:
-                channel_slice = np.zeros((n_regions, 1, 2), dtype='int')
-                channel_slice[:, :, 1] = 1
-                # add z dimension
-                slice_list = np.concatenate((slice_list, channel_slice),
-                                            axis=1)
-
-            X = np.amax(slice_list[:, 0, 1])
-            Y = np.amax(slice_list[:, 1, 1])
-            Z = np.amax(slice_list[:, 2, 1])
-            C = np.amax(slice_list[:, 3, 1])
-
-            labelmat_shape = (X, Y, Z, C)
-
+            labelmat_shape = np.amax(slice_list[:, :, 1], axis=0)
         return labelmat_shape
 
     def _get_blocks(self, item_index):

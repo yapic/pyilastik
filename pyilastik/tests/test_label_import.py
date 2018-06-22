@@ -123,3 +123,11 @@ class TestLabelImportDimensions(TestCase):
                         [4., 4., 4., 4.]])
 
         assert_array_equal(val, labels[0, 212:217, 309:313, 0])
+
+    def test_read_project_for_ilastik_version_1_3_0(self):
+        p = os.path.join(path, 'ilastik-1.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        labels = ilp['ilastik-test-2-4-8.tif'][1][1]
+
+        assert labels.shape == (8, 4, 2, 1)
+        assert set(np.unique(labels)) == {0, 1, 2}

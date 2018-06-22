@@ -35,7 +35,12 @@ class IlastikStorageVersion01(object):
         self.image_path = image_path
         self.skip_image = skip_image
 
-        assert self.f.get('/Input Data/StorageVersion')[()].decode() == '0.2'
+        try:
+            version = self.f.get('/Input Data/StorageVersion')[()].decode()
+        except:
+            # for ilastik release > 1.3.0
+            version = self.f.get('/Input Data/StorageVersion')[()]
+        assert version == '0.2'
 
     def __iter__(self):
         '''

@@ -15,12 +15,11 @@ class UnknownIlastikVersion(Exception):
 def read_project(ilastik_file, image_path=None, prediction=False,
                  skip_image=False):
     f = h5py.File(ilastik_file, 'r')
-
     version = f.get('/PixelClassification/StorageVersion')
     if version is not None:
         try:
             version = version[()].decode()
-        except:
+        except AttributeError:
             # for ilastik releases >1.3.0
             version = version[()]
 

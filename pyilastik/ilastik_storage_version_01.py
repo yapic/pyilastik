@@ -37,7 +37,7 @@ class IlastikStorageVersion01(object):
 
         try:
             version = self.f.get('/Input Data/StorageVersion')[()].decode()
-        except:
+        except AttributeError:
             # for ilastik release > 1.3.0
             version = self.f.get('/Input Data/StorageVersion')[()]
         assert version == '0.2'

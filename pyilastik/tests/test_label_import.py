@@ -3,6 +3,7 @@ import os
 import numpy as np
 from numpy.testing import assert_array_equal
 import pyilastik
+import pyilastik.ilastik_storage_version_01 as ils
 
 data_path = path = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -131,3 +132,112 @@ class TestLabelImportDimensions(TestCase):
 
         assert labels.shape == (8, 4, 2, 1)
         assert set(np.unique(labels)) == {0, 1, 2}
+
+    def test_get_block_slices(self):
+
+        localpath = os.path.join(path, 'purkinjetest')
+        p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
+
+        #p = os.path.join(path, 'dimensionstest/x15_y10_z2_rgb_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+
+        b = ilp._get_block_slices(0)
+        val = np.array([[[253, 267],
+                         [318, 484],
+                         [0, 1]],
+                        [[186, 253],
+                         [289, 486],
+                         [0, 1]]])
+        assert_array_equal(b, val)
+
+        b = ilp._get_block_slices(0, format='slices')
+        val = [[slice(253, 267, None),
+                slice(318, 484, None),
+                slice(0, 1, None)],
+               [slice(186, 253, None),
+                slice(289, 486, None),
+                slice(0, 1, None)]]
+        self.assertEqual(b, val)
+
+
+    def test_blocks_in_tile(self):
+        localpath = os.path.join(path, 'purkinjetest')
+        p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
+        tile_slices = np.array([[255, 300],
+                                [312, 500],
+                                [0, 1]])
+
+        ilp = pyilastik.read_project(p, skip_image=True)
+        b = ilp._blocks_in_tile(0, tile_slices)
+
+        self.assertTrue(b[0])
+        self.assertFalse(b[1])
+        self.assertEqual(len(b), 2)
+
+    def test_tile_for_selected_blocks(self):
+        localpath = os.path.join(path, 'purkinjetest')
+        p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+
+        ilp.tile_for_selected_blocks(0, [True, True])
+        # print(type(blocks))
+        # for block in blocks:
+        #     print(block[()])
+        assert False
+
+
+
+    def test_is_overlap(self):
+
+        tpl = np.array([[2, 13],
+                        [4, 15]])
+
+        b1 = np.array([[3, 6],
+                       [10, 14]])
+        b2 = np.array([[9, 16],
+                       [3, 7]])
+        b3 = np.array([[13, 17],
+                       [10, 13]])
+        b4 = np.array([[0, 1],
+                       [12, 13]])
+        b5 = np.array([[1, 4],
+                       [13, 17]])
+        b6 = np.array([[3, 6],
+                       [2, 5]])
+        b7 = np.array([[12, 15],
+                       [14, 17]])
+        b8 = np.array([[0, 3],
+                       [2, 5]])
+        b9 = np.array([[0, 3],
+                       [4, 7]])
+
+
+        self.assertTrue(ils.is_overlap(tpl, b1))
+        self.assertTrue(ils.is_overlap(tpl, b2))
+        self.assertFalse(ils.is_overlap(tpl, b3))
+        self.assertFalse(ils.is_overlap(tpl, b4))
+        self.assertTrue(ils.is_overlap(tpl, b5))
+        self.assertFalse(ils.is_overlap(tpl, b6))
+        self.assertFalse(ils.is_overlap(tpl, b7))
+        self.assertFalse(ils.is_overlap(tpl, b8))
+        self.assertFalse(ils.is_overlap(tpl, b9))
+
+
+
+    def test_tile_loc_from_slices(self):
+
+        s1 = np.array([[3, 6],
+                       [10, 14],
+                       [0, 1]])
+
+        s2 = np.array([[9, 16],
+                       [3, 7],
+                       [0, 1]])
+
+        s3 = np.array([[12, 15],
+                       [14, 17],
+                       [0, 1]])
+
+        pos, shape = ils.tile_loc_from_slices([s1, s2, s3])
+        assert_array_equal(pos, np.array([3, 3, 0]))
+        assert_array_equal(shape, np.array([12, 13, 1]))

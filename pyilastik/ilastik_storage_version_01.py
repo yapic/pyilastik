@@ -1,6 +1,7 @@
 import os
 import re
 import functools
+from itertools import compress
 import warnings
 import numpy as np
 from bigtiff import Tiff
@@ -24,6 +25,40 @@ def imread(path):
     img = np.stack(img)
     img = np.moveaxis(img, (0, 1, 2, 3), (3, 0, 1, 2))
     return img
+
+
+def is_overlap(tile_pos, block_pos):
+    '''
+    checks if plock position overlaps tile position
+    '''
+
+    return np.array([block_pos[:, 0] < tile_pos[:, 1]-1,
+                     block_pos[:, 1]-1 > tile_pos[:, 0]]).all()
+
+
+def tile_loc_from_slices(slice_list):
+    '''
+    get optimal tile position and shape for list of slices
+    '''
+    slice_list = np.array(slice_list)
+    assert slice_list.ndim == 3
+
+    lower = np.min(slice_list[:, :, 0], axis=0)
+    upper = np.max(slice_list[:, :, 1], axis=0)
+    shape = upper - lower - 1
+    pos = lower
+
+    return pos, shape
+
+
+def ndarray2slices(ndarray):
+    print(ndarray)
+    # out = []
+    # for slices in ndarray:
+    return [slice(int(start), int(end)) for start, end in ndarray]
+
+
+
 
 
 class IlastikStorageVersion01(object):
@@ -106,11 +141,13 @@ class IlastikStorageVersion01(object):
         # 1st get the (approximate) labeled image size
         labels = np.zeros(self.shape_of_labelmatrix(i))
 
-        for block in self._get_blocks(i):
-            slices = re.findall('([0-9]+):([0-9]+)',
-                                block.attrs['blockSlice'].decode('ascii'))
-            slices = [slice(int(start), int(end)) for start, end in slices]
+        slice_list = self._get_block_slices(i, format='slices')
+
+        blocks = self._get_blocks(i)
+        for block, slices in zip(blocks, slice_list):
             labels[slices] = block[()]
+
+
 
         n_dims = len(labels.shape)
         msg = 'dimensions of labelmatrix should be 4 (zyxc) or 3 (yxc)'
@@ -152,7 +189,10 @@ class IlastikStorageVersion01(object):
     def shape_of_labelmatrix(self, item_index):
         '''
         Label matrix shape is retrieved from label data.
-        Dimension order is according to self.axorder_labels()
+
+        Order is (Z, Y, X, C) where C size of C dimension
+        is always 1 (only one label channel implemented, i.e.
+        currently no overlapping label regions supported)
 
         Label matrix shape does not always equal corresponding image shape.
         Label matrix shape is always smaller or equal to corresponding
@@ -160,12 +200,7 @@ class IlastikStorageVersion01(object):
 
         If no labels exist, label matrix shape is 0 in all dimensions.
         '''
-        slice_list = []
-
-        for block in self._get_blocks(item_index):
-            slices = re.findall('([0-9]+):([0-9]+)',
-                                block.attrs['blockSlice'].decode('ascii'))
-            slice_list.append(slices)
+        slice_list = self._get_block_slices(item_index)
 
         if len(slice_list) == 0:
             msg = 'No labels found in Ilastik file - ' +\
@@ -175,7 +210,6 @@ class IlastikStorageVersion01(object):
             labelmat_shape = np.zeros((4,), dtype='int')
 
         else:
-            slice_list = np.array(slice_list).astype('int')
             n_regions, n_dims, _ = slice_list.shape
 
             labelmat_shape = np.amax(slice_list[:, :, 1], axis=0)
@@ -185,6 +219,76 @@ class IlastikStorageVersion01(object):
         dset_name = 'labels{:03}'.format(item_index)
         labelset_str = '/PixelClassification/LabelSets/{}'.format(dset_name)
         return self.f.get(labelset_str).values()
+
+    def _blocks_in_tile(self, item_index, tile_slice):
+        '''
+        Checks which blocks overlap with the given tile slice.
+        Returns a list of booleans (one for each block).
+        '''
+        block_slices = self._get_block_slices(item_index)
+
+        # We do not check for overlap in the channel dimension (the last
+        # dimension). The channel dimension is a dummy dimension with slice
+        # values being always [0 1].
+        return [is_overlap(tile_slice[:-1,:], block_slice[:-1,:])
+                for block_slice in block_slices]
+
+    def tile_for_selected_blocks(self, item_index, block_selection):
+        '''
+        returns a labelmatrix tile and a corresponding position
+        '''
+        blocks = list(compress(self._get_blocks(item_index),
+                               block_selection))
+        slices = list(compress(self._get_block_slices(item_index),
+                               block_selection))
+
+
+
+        pos, shape = tile_loc_from_slices(slices)
+        shape = shape+1
+        print(shape)
+        labels = np.zeros(shape)
+
+        print('pos: {}'.format(pos))
+        for block, s in zip(blocks, slices):
+            print('s: {}'.format(s))
+            s_shifted = s
+            s_shifted[:,0] = s_shifted[:,0] - pos
+            s_shifted[:,1] = s_shifted[:,1] - pos
+            s_fmt = ndarray2slices(s_shifted)
+            assert (s_shifted >= 0).all()
+            print('s shifted: {}'.format(s_shifted))
+            print(s_fmt)
+            lb = block[()]
+            print(lb.shape)
+            print(labels.shape)
+            labels[s_fmt] = lb
+        print(labels.shape)
+        print(labels)
+
+
+
+
+
+    def _get_block_slices(self, item_index, format='ndarray'):
+        slice_list = []
+        for block in self._get_blocks(item_index):
+            slices = re.findall('([0-9]+):([0-9]+)',
+                                block.attrs['blockSlice'].decode('ascii'))
+            slice_list.append(slices)
+
+        if format == 'ndarray':
+            return np.array(slice_list).astype('int')
+
+        if format == 'slices':
+            out = []
+            for slices in slice_list:
+                out.append([slice(int(start), int(end))
+                            for start, end in slices])
+            return out
+
+        slices = [slice(int(start), int(end)) for start, end in slices]
+
 
     def __len__(self):
         return len(self.f.get('/PixelClassification/LabelSets').keys())

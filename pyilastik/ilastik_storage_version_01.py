@@ -279,15 +279,19 @@ class IlastikStorageVersion01(object):
         blockslices = self._get_block_slices(item_index)
         sel = self._blocks_in_tile(item_index, tile_slice)
 
-        pos_p, labels_p = self.tile_for_selected_blocks(item_index, sel)
-        shape_p = labels_p.shape
-
         pos_q = tile_slice[:, 0]
         shape_q = tile_slice[:, 1] - tile_slice[:, 0]
         labels_q = np.zeros(shape_q)
 
-        q_slice = ils._get_slices_for(pos_p, pos_q, shape_p, shape_q)
-        p_slice = ils._get_slices_for(pos_q, pos_p, shape_q, shape_p)
+        if (~np.array(sel)).all():
+            # return empty label matrix if no blocks in tile
+            return labels_q
+
+        pos_p, labels_p = self.tile_for_selected_blocks(item_index, sel)
+        shape_p = labels_p.shape
+
+        q_slice = _get_slices_for(pos_p, pos_q, shape_p, shape_q)
+        p_slice = _get_slices_for(pos_q, pos_p, shape_q, shape_p)
 
         labels_q[q_slice] = labels_p[p_slice]
 

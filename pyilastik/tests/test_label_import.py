@@ -193,22 +193,50 @@ class TestLabelImportDimensions(TestCase):
 
 
 
-    # def test_tile(self):
-    #
-    #     p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
-    #     ilp = pyilastik.read_project(p, skip_image=True)
-    #
-    #     tile_slice = np.array([[0, 1],
-    #                            [0, 50],
-    #                            [0, 50],
-    #                            [0, 1]])
-    #
-    #     t = ilp.tile(0, tile_slice)
-    #
-    #
-    #     print(t)
-    #
-    #     assert False
+    def test_tile(self):
+
+        p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+
+        tile_slice = np.array([[0, 1],
+                               [0, 10],
+                               [0, 7],
+                               [0, 1]])
+
+        t = ilp.tile(0, tile_slice)
+
+        val_1 = np.array([[0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.]])
+
+        assert_array_equal(t[0, :, :, 0], val_1)
+
+        tile_slice = np.array([[0, 1],
+                               [92, 101],
+                               [157, 164],
+                               [0, 1]])
+
+        t = ilp.tile(0, tile_slice)
+
+        val_2 = np.array([[0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 1., 1., 1., 1., 0.],
+                          [0., 0., 1., 1., 1., 1., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.]])
+
+        assert_array_equal(t[0, :, :, 0], val_2)
+
 
 
 

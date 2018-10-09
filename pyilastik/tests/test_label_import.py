@@ -161,6 +161,8 @@ class TestLabelImportDimensions(TestCase):
 
 
     def test_blocks_in_tile(self):
+
+
         localpath = os.path.join(path, 'purkinjetest')
         p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
 
@@ -174,6 +176,41 @@ class TestLabelImportDimensions(TestCase):
         self.assertTrue(b[0])
         self.assertFalse(b[1])
         self.assertEqual(len(b), 2)
+
+
+        p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+
+        tile_slices = np.array([[0, 1],
+                               [0, 50],
+                               [0, 50],
+                               [0, 1]])
+        assert_array_equal(ilp._blocks_in_tile(0, tile_slices),
+                           np.array([True, False, False]))
+
+
+
+
+
+
+    # def test_tile(self):
+    #
+    #     p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
+    #     ilp = pyilastik.read_project(p, skip_image=True)
+    #
+    #     tile_slice = np.array([[0, 1],
+    #                            [0, 50],
+    #                            [0, 50],
+    #                            [0, 1]])
+    #
+    #     t = ilp.tile(0, tile_slice)
+    #
+    #
+    #     print(t)
+    #
+    #     assert False
+
+
 
     def test_tile_for_selected_blocks(self):
 
@@ -247,11 +284,17 @@ class TestLabelImportDimensions(TestCase):
         self.assertFalse(ils.is_overlap(tpl, b3))
         self.assertFalse(ils.is_overlap(tpl, b4))
         self.assertTrue(ils.is_overlap(tpl, b5))
-        self.assertFalse(ils.is_overlap(tpl, b6))
-        self.assertFalse(ils.is_overlap(tpl, b7))
-        self.assertFalse(ils.is_overlap(tpl, b8))
-        self.assertFalse(ils.is_overlap(tpl, b9))
+        self.assertTrue(ils.is_overlap(tpl, b6))
+        self.assertTrue(ils.is_overlap(tpl, b7))
+        self.assertTrue(ils.is_overlap(tpl, b8))
+        self.assertTrue(ils.is_overlap(tpl, b9))
 
+        tpl = np.array([[2, 7],
+                        [4, 10]])
+        b1 = np.array([[2, 3],
+                       [4, 10]])
+        self.assertTrue(ils.is_overlap(tpl, b1))
+        # assert False
 
 
     def test_tile_loc_from_slices(self):
@@ -272,20 +315,7 @@ class TestLabelImportDimensions(TestCase):
         assert_array_equal(pos, np.array([3, 3, 0]))
         assert_array_equal(shape, np.array([13, 14, 1]))
 
-    def test_tmp(self):
-
-
-
-
-        # def get_slices_for(p_pos, q_pos, p_shape, q_shape):
-        #     q_lower = p_pos - q_pos
-        #     q_upper = q_lower + p_shape
-        #     q_slice = np.array([q_lower, q_upper]).transpose()
-        #     q_slice[q_slice < 0] = 0
-        #     q_shape_lookup = np.tile(q_shape, (2, 1)).transpose()
-        #     q_slice[q_slice > q_shape_lookup] = q_shape_lookup[q_slice > q_shape_lookup]
-        #
-        #     return [slice(start, stop) for start, stop in q_slice]
+    def test_get_slices_for(self):
 
         q_pos = np.array((5, 4))
         q_shape = np.array((3, 3))

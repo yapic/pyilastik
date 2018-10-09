@@ -32,8 +32,8 @@ def is_overlap(tile_pos, block_pos):
     checks if plock position overlaps tile position
     '''
 
-    return np.array([block_pos[:, 0] < tile_pos[:, 1]-1,
-                     block_pos[:, 1]-1 > tile_pos[:, 0]]).all()
+    return np.array([block_pos[:, 0] <= tile_pos[:, 1]-1,
+                     block_pos[:, 1]-1 >= tile_pos[:, 0]]).all()
 
 
 def tile_loc_from_slices(slice_list):
@@ -225,6 +225,7 @@ class IlastikStorageVersion01(object):
         return labelmat_shape
 
     def _get_blocks(self, item_index):
+        print('index: {}'.format(item_index))
         dset_name = 'labels{:03}'.format(item_index)
         labelset_str = '/PixelClassification/LabelSets/{}'.format(dset_name)
         return self.f.get(labelset_str).values()
@@ -235,6 +236,9 @@ class IlastikStorageVersion01(object):
         Returns a list of booleans (one for each block).
         '''
         block_slices = self._get_block_slices(item_index)
+
+        print('block_slices: {}'.format(block_slices))
+        print('tile_slice: {}'.format(tile_slice))
 
         # We do not check for overlap in the channel dimension (the last
         # dimension). The channel dimension is a dummy dimension with slice
@@ -252,7 +256,7 @@ class IlastikStorageVersion01(object):
                                block_selection))
 
 
-
+        print('slices: {}'.format(slices))
         pos, shape = tile_loc_from_slices(slices)
 
 
@@ -268,6 +272,28 @@ class IlastikStorageVersion01(object):
             labels[s_fmt] = block[()]
 
         return pos, labels
+
+
+    def tile(self, item_index, tile_slice):
+
+        blockslices = self._get_block_slices(item_index)
+        sel = self._blocks_in_tile(item_index, tile_slice)
+
+        pos_p, labels_p = self.tile_for_selected_blocks(item_index, sel)
+        shape_p = labels_p.shape
+
+        pos_q = tile_slice[:, 0]
+        shape_q = tile_slice[:, 1] - tile_slice[:, 0]
+        labels_q = np.zeros(shape_q)
+
+        q_slice = ils._get_slices_for(pos_p, pos_q, shape_p, shape_q)
+        p_slice = ils._get_slices_for(pos_q, pos_p, shape_q, shape_p)
+
+        labels_q[q_slice] = labels_p[p_slice]
+
+        return labels_q
+
+
 
 
 

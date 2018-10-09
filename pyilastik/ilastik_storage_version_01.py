@@ -1,11 +1,11 @@
 import os
 import re
 import functools
-from itertools import compress
 import warnings
 import numpy as np
 from bigtiff import Tiff
 import pyilastik.utils as utils
+from functools import lru_cache
 
 # image shape: (?,?,H,W,C), e.g. (1, 1, 2098, 2611, 3)
 # labels shape: (?,?,H,W,1), e.g. (1, 1, 2098, 2611, 1), 0 == unlabeled
@@ -67,7 +67,6 @@ def _get_slices_for(p_pos, q_pos, p_shape, q_shape):
                                                        q_shape_lookup]
 
     return [slice(start, stop) for start, stop in q_slice]
-
 
 
 class IlastikStorageVersion01(object):
@@ -148,17 +147,13 @@ class IlastikStorageVersion01(object):
         prediction = None  # TODO
 
         # 1st get the (approximate) labeled image size
-        labels = np.zeros(self.shape_of_labelmatrix(i))
+        shape = self.shape_of_labelmatrix(i)
+        n_dims = len(shape)
 
-        slice_list = self._get_block_slices(i, format='slices')
+        tile_slice = np.array([[0, s] for s in shape])
 
-        blocks = self._get_blocks(i)
-        for block, slices in zip(blocks, slice_list):
-            labels[slices] = block[()]
+        labels = self.tile(i, tile_slice)
 
-
-
-        n_dims = len(labels.shape)
         msg = 'dimensions of labelmatrix should be 4 (zyxc) or 3 (yxc)'
         assert n_dims in [3, 4], msg
 
@@ -224,8 +219,9 @@ class IlastikStorageVersion01(object):
             labelmat_shape = np.amax(slice_list[:, :, 1], axis=0)
         return labelmat_shape
 
+
+    @lru_cache(maxsize=None)
     def _get_blocks(self, item_index):
-        print('index: {}'.format(item_index))
         dset_name = 'labels{:03}'.format(item_index)
         labelset_str = '/PixelClassification/LabelSets/{}'.format(dset_name)
         return self.f.get(labelset_str).values()
@@ -237,54 +233,57 @@ class IlastikStorageVersion01(object):
         '''
         block_slices = self._get_block_slices(item_index)
 
-        print('block_slices: {}'.format(block_slices))
-        print('tile_slice: {}'.format(tile_slice))
-
         # We do not check for overlap in the channel dimension (the last
         # dimension). The channel dimension is a dummy dimension with slice
         # values being always [0 1].
-        return [is_overlap(tile_slice[:-1,:], block_slice[:-1,:])
+        return [is_overlap(tile_slice[:-1, :], block_slice[:-1, :])
                 for block_slice in block_slices]
 
     def tile_for_selected_blocks(self, item_index, block_selection):
         '''
         returns a labelmatrix tile and a corresponding position
         '''
-        blocks = list(compress(self._get_blocks(item_index),
-                               block_selection))
-        slices = list(compress(self._get_block_slices(item_index),
-                               block_selection))
 
-
-        print('slices: {}'.format(slices))
-        pos, shape = tile_loc_from_slices(slices)
-
-
+        slices = self._get_block_slices(item_index)
+        block_indices = np.nonzero(block_selection)[0]
+        pos, shape = tile_loc_from_slices(slices[block_indices])
         labels = np.zeros(shape)
 
-        for block, s in zip(blocks, slices):
-            s_shifted = s
-            s_shifted[:,0] = s_shifted[:,0] - pos
-            s_shifted[:,1] = s_shifted[:,1] - pos
+        for i in block_indices:
+
+            s_shifted = slices[i]
+            s_shifted[:, 0] = s_shifted[:, 0] - pos
+            s_shifted[:, 1] = s_shifted[:, 1] - pos
             s_fmt = ndarray2slices(s_shifted)
             assert (s_shifted >= 0).all()
 
-            labels[s_fmt] = block[()]
+            labels[s_fmt] = self.load_block_data(item_index, i)
 
         return pos, labels
+
+    @lru_cache(maxsize=None)
+    def load_block_data(self, item_index, block_index):
+        blocks = self._get_blocks(item_index)
+
+        counter = 0
+        for block in blocks:
+            if counter == block_index:
+                return block[()]
+            counter += 1
 
 
     def tile(self, item_index, tile_slice):
 
-        blockslices = self._get_block_slices(item_index)
         sel = self._blocks_in_tile(item_index, tile_slice)
 
         pos_q = tile_slice[:, 0]
         shape_q = tile_slice[:, 1] - tile_slice[:, 0]
         labels_q = np.zeros(shape_q)
 
+        # return empty label matrix if no blocks in tile
+        if not sel:
+            return labels_q
         if (~np.array(sel)).all():
-            # return empty label matrix if no blocks in tile
             return labels_q
 
         pos_p, labels_p = self.tile_for_selected_blocks(item_index, sel)
@@ -297,12 +296,7 @@ class IlastikStorageVersion01(object):
 
         return labels_q
 
-
-
-
-
-
-
+    @lru_cache(maxsize=None)
     def _get_block_slices(self, item_index, format='ndarray'):
         slice_list = []
         for block in self._get_blocks(item_index):
@@ -321,7 +315,6 @@ class IlastikStorageVersion01(object):
             return out
 
         slices = [slice(int(start), int(end)) for start, end in slices]
-
 
     def __len__(self):
         return len(self.f.get('/PixelClassification/LabelSets').keys())

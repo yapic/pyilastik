@@ -297,22 +297,22 @@ class IlastikStorageVersion01(object):
         return labels_q
 
     @lru_cache(maxsize=None)
-    def _get_block_slices(self, item_index, format='ndarray'):
+    def _get_block_slices(self, item_index):
         slice_list = []
         for block in self._get_blocks(item_index):
             slices = re.findall('([0-9]+):([0-9]+)',
                                 block.attrs['blockSlice'].decode('ascii'))
             slice_list.append(slices)
 
-        if format == 'ndarray':
-            return np.array(slice_list).astype('int')
 
-        if format == 'slices':
-            out = []
-            for slices in slice_list:
-                out.append([slice(int(start), int(end))
-                            for start, end in slices])
-            return out
+        return np.array(slice_list).astype('int')
+
+        # if format == 'slices':
+        #     out = []
+        #     for slices in slice_list:
+        #         out.append([slice(int(start), int(end))
+        #                     for start, end in slices])
+        #     return out
 
         slices = [slice(int(start), int(end)) for start, end in slices]
 

@@ -150,15 +150,6 @@ class TestLabelImportDimensions(TestCase):
                          [0, 1]]])
         assert_array_equal(b, val)
 
-        b = ilp._get_block_slices(0, format='slices')
-        val = [[slice(253, 267, None),
-                slice(318, 484, None),
-                slice(0, 1, None)],
-               [slice(186, 253, None),
-                slice(289, 486, None),
-                slice(0, 1, None)]]
-        self.assertEqual(b, val)
-
 
     def test_blocks_in_tile(self):
 

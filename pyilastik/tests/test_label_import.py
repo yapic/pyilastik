@@ -163,6 +163,7 @@ class TestLabelImportDimensions(TestCase):
     def test_blocks_in_tile(self):
         localpath = os.path.join(path, 'purkinjetest')
         p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
+
         tile_slices = np.array([[255, 300],
                                 [312, 500],
                                 [0, 1]])
@@ -175,15 +176,44 @@ class TestLabelImportDimensions(TestCase):
         self.assertEqual(len(b), 2)
 
     def test_tile_for_selected_blocks(self):
-        localpath = os.path.join(path, 'purkinjetest')
-        p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
+
+        p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
         ilp = pyilastik.read_project(p, skip_image=True)
 
-        ilp.tile_for_selected_blocks(0, [True, True])
-        # print(type(blocks))
-        # for block in blocks:
-        #     print(block[()])
-        assert False
+        pos, tile = ilp.tile_for_selected_blocks(0, [True, False, True])
+
+        tile_1 = tile[0, :10, :10, 0]
+        tile_2 = tile[0, -10:, -10:, 0]
+
+        self.assertEqual(tile.shape, (2, 96, 161, 1))
+
+        val_1 = np.array([[1., 1., 1., 0., 0., 0., 0., 0., 0., 0.],
+                          [1., 1., 1., 0., 0., 0., 0., 0., 0., 0.],
+                          [1., 1., 1., 0., 0., 0., 0., 0., 0., 0.],
+                          [1., 1., 1., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])
+
+        val_2 = np.array([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 1., 1., 1., 1.],
+                          [0., 0., 0., 0., 0., 0., 1., 1., 1., 1.],
+                          [0., 0., 0., 0., 0., 0., 2., 2., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 2., 2., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 2., 2., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 2., 2., 0., 0.]])
+
+        assert_array_equal(tile_1, val_1)
+        assert_array_equal(tile_2, val_2)
+
+
+
 
 
 
@@ -240,4 +270,49 @@ class TestLabelImportDimensions(TestCase):
 
         pos, shape = ils.tile_loc_from_slices([s1, s2, s3])
         assert_array_equal(pos, np.array([3, 3, 0]))
-        assert_array_equal(shape, np.array([12, 13, 1]))
+        assert_array_equal(shape, np.array([13, 14, 1]))
+
+    def test_tmp(self):
+
+
+
+
+        # def get_slices_for(p_pos, q_pos, p_shape, q_shape):
+        #     q_lower = p_pos - q_pos
+        #     q_upper = q_lower + p_shape
+        #     q_slice = np.array([q_lower, q_upper]).transpose()
+        #     q_slice[q_slice < 0] = 0
+        #     q_shape_lookup = np.tile(q_shape, (2, 1)).transpose()
+        #     q_slice[q_slice > q_shape_lookup] = q_shape_lookup[q_slice > q_shape_lookup]
+        #
+        #     return [slice(start, stop) for start, stop in q_slice]
+
+        q_pos = np.array((5, 4))
+        q_shape = np.array((3, 3))
+        p_pos = np.array((4, 2))
+        p_shape = np.array((5, 6))
+
+        q_slice = ils._get_slices_for(p_pos, q_pos, p_shape, q_shape)
+        p_slice = ils._get_slices_for(q_pos, p_pos, q_shape, p_shape)
+        self.assertEqual(q_slice, [slice(0, 3), slice(0, 3)])
+        self.assertEqual(p_slice, [slice(1, 4), slice(2, 5)])
+
+        q_pos = np.array((5, 4))
+        q_shape = np.array((7, 3))
+        p_pos = np.array((4, 2))
+        p_shape = np.array((5, 6))
+
+        q_slice = ils._get_slices_for(p_pos, q_pos, p_shape, q_shape)
+        p_slice = ils._get_slices_for(q_pos, p_pos, q_shape, p_shape)
+        self.assertEqual(q_slice, [slice(0, 4), slice(0, 3)])
+        self.assertEqual(p_slice, [slice(1, 5), slice(2, 5)])
+
+        q_pos = np.array((1, 3))
+        q_shape = np.array((7, 4))
+        p_pos = np.array((4, 2))
+        p_shape = np.array((5, 6))
+
+        q_slice = ils._get_slices_for(p_pos, q_pos, p_shape, q_shape)
+        p_slice = ils._get_slices_for(q_pos, p_pos, q_shape, p_shape)
+        self.assertEqual(q_slice, [slice(3, 7), slice(0, 4)])
+        self.assertEqual(p_slice, [slice(0, 4), slice(1, 5)])

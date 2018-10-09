@@ -45,19 +45,28 @@ def tile_loc_from_slices(slice_list):
 
     lower = np.min(slice_list[:, :, 0], axis=0)
     upper = np.max(slice_list[:, :, 1], axis=0)
-    shape = upper - lower - 1
+
+    shape = upper - lower
     pos = lower
 
     return pos, shape
 
 
 def ndarray2slices(ndarray):
-    print(ndarray)
-    # out = []
-    # for slices in ndarray:
+
     return [slice(int(start), int(end)) for start, end in ndarray]
 
 
+def _get_slices_for(p_pos, q_pos, p_shape, q_shape):
+    q_lower = p_pos - q_pos
+    q_upper = q_lower + p_shape
+    q_slice = np.array([q_lower, q_upper]).transpose()
+    q_slice[q_slice < 0] = 0
+    q_shape_lookup = np.tile(q_shape, (2, 1)).transpose()
+    q_slice[q_slice > q_shape_lookup] = q_shape_lookup[q_slice >
+                                                       q_shape_lookup]
+
+    return [slice(start, stop) for start, stop in q_slice]
 
 
 
@@ -245,26 +254,20 @@ class IlastikStorageVersion01(object):
 
 
         pos, shape = tile_loc_from_slices(slices)
-        shape = shape+1
-        print(shape)
+
+
         labels = np.zeros(shape)
 
-        print('pos: {}'.format(pos))
         for block, s in zip(blocks, slices):
-            print('s: {}'.format(s))
             s_shifted = s
             s_shifted[:,0] = s_shifted[:,0] - pos
             s_shifted[:,1] = s_shifted[:,1] - pos
             s_fmt = ndarray2slices(s_shifted)
             assert (s_shifted >= 0).all()
-            print('s shifted: {}'.format(s_shifted))
-            print(s_fmt)
-            lb = block[()]
-            print(lb.shape)
-            print(labels.shape)
-            labels[s_fmt] = lb
-        print(labels.shape)
-        print(labels)
+
+            labels[s_fmt] = block[()]
+
+        return pos, labels
 
 
 

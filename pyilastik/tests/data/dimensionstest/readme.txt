@@ -112,3 +112,30 @@ label coordinates ZXY:
                (0, 3, 2),
                (0, 8, 7),
                (0, 9, 7)
+
+
+x502_y251_z5_c1_classes2.ilp
+----------------------------
+
+image: x502_y251_z5_c1.tif
+
+classes: 'Label 1', 'Label 2'
+
+
+label coordinates ZXY:
+    'Label 1':
+        * Rectangle from (0, 2, 4) to (1, 4, 7)
+          shape (2, 3, 4)
+
+        * Rectange from (0, 159, 94) to (0, 162, 95)
+          shape (1, 4, 2)
+
+         * Rectange from (0, 481, 242) to (0, 483, 244)
+           shape (1, 3, 3)
+
+    'Label 2':
+        * Rectangle from (0, 159, 96) to (0, 160, 99)
+          shape (1, 2, 4)
+
+        * Plus sign from (0, 485, 242) to (0, 487, 244)
+          shape (1, 3, 3)

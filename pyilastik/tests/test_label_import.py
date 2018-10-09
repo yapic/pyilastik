@@ -237,6 +237,21 @@ class TestLabelImportDimensions(TestCase):
 
         assert_array_equal(t[0, :, :, 0], val_2)
 
+        tile_slice = np.array([[0, 1],
+                               [50, 55],
+                               [50, 55],
+                               [0, 1]])
+
+        t = ilp.tile(0, tile_slice)
+
+        val_3 = np.array([[0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.]])
+
+        assert_array_equal(t[0, :, :, 0], val_3)
+
 
 
 

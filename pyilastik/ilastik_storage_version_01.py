@@ -219,7 +219,6 @@ class IlastikStorageVersion01(object):
             labelmat_shape = np.amax(slice_list[:, :, 1], axis=0)
         return labelmat_shape
 
-
     @lru_cache(maxsize=None)
     def _get_blocks(self, item_index):
         dset_name = 'labels{:03}'.format(item_index)
@@ -265,12 +264,9 @@ class IlastikStorageVersion01(object):
     def load_block_data(self, item_index, block_index):
         blocks = self._get_blocks(item_index)
 
-        counter = 0
-        for block in blocks:
+        for counter, block in enumerate(blocks):
             if counter == block_index:
                 return block[()]
-            counter += 1
-
 
     def tile(self, item_index, tile_slice):
 
@@ -283,7 +279,7 @@ class IlastikStorageVersion01(object):
         # return empty label matrix if no blocks in tile
         if not sel:
             return labels_q
-        if (~np.array(sel)).all():
+        if not np.any(sel):
             return labels_q
 
         pos_p, labels_p = self.tile_for_selected_blocks(item_index, sel)
@@ -304,17 +300,7 @@ class IlastikStorageVersion01(object):
                                 block.attrs['blockSlice'].decode('ascii'))
             slice_list.append(slices)
 
-
         return np.array(slice_list).astype('int')
-
-        # if format == 'slices':
-        #     out = []
-        #     for slices in slice_list:
-        #         out.append([slice(int(start), int(end))
-        #                     for start, end in slices])
-        #     return out
-
-        slices = [slice(int(start), int(end)) for start, end in slices]
 
     def __len__(self):
         return len(self.f.get('/PixelClassification/LabelSets').keys())

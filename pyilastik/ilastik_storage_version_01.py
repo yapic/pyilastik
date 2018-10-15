@@ -190,11 +190,25 @@ class IlastikStorageVersion01(object):
 
         return original_path, (img, labels, prediction)
 
+    def n_dims(self, item_index):
+        '''
+        get nr of dimensions
+        3 for yxc
+        4 for zyxc
+        0 if no labels available
+        '''
+        slices = self._get_block_slices(item_index)
+
+        if slices.size > 0:
+            return slices.shape[1]
+        else:
+            return 0
+
     def shape_of_labelmatrix(self, item_index):
         '''
         Label matrix shape is retrieved from label data.
 
-        Order is (Z, Y, X, C) where C size of C dimension
+        Order is (Z, Y, X, C) or (Y, X, C) where C size of C dimension
         is always 1 (only one label channel implemented, i.e.
         currently no overlapping label regions supported)
 
@@ -214,8 +228,6 @@ class IlastikStorageVersion01(object):
             labelmat_shape = np.zeros((4,), dtype='int')
 
         else:
-            n_regions, n_dims, _ = slice_list.shape
-
             labelmat_shape = np.amax(slice_list[:, :, 1], axis=0)
         return labelmat_shape
 
@@ -269,7 +281,7 @@ class IlastikStorageVersion01(object):
 
     def tile(self, item_index, tile_slice):
         '''
-        Order is (Z, Y, X, C) where C size of C dimension
+        Order is (Z, Y, X, C) or (Y, X, C) where C size of C dimension
         is always 1 (only one label channel implemented, i.e.
         currently no overlapping label regions supported)
         '''

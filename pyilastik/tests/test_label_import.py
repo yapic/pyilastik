@@ -73,6 +73,29 @@ class TestLabelImportDimensions(TestCase):
         self.assertEqual(labels.shape, (2, 8, 10, 1))
         assert_array_equal(labels[:, :, :, 0], val_multi_z)
 
+        # print(np.transpose(labels, (3, 0, 2, 1)).astype(int))
+        # assert False
+
+
+    def test_caching_of_block_slices(self):
+
+        p = os.path.join(path, 'dimensionstest/x15_y10_z2_c4_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+
+        s = np.array([[0, 2], [0, 10], [0, 15], [0, 1]])
+
+        bs_before = ilp._get_block_slices(0).copy()
+        tile = ilp.tile(0, s)
+        bs_after = ilp._get_block_slices(0)
+        print(bs_before)
+        assert_array_equal(bs_before, bs_after)
+
+
+
+
+
+
+
     def test_multi_channel_single_z(self):
 
         p = os.path.join(path, 'dimensionstest/x15_y10_z1_c2_classes2.ilp')

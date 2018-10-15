@@ -242,8 +242,7 @@ class IlastikStorageVersion01(object):
         '''
         returns a labelmatrix tile and a corresponding position
         '''
-
-        slices = self._get_block_slices(item_index)
+        slices = self._get_block_slices(item_index).copy()
         block_indices = np.nonzero(block_selection)[0]
         pos, shape = tile_loc_from_slices(slices[block_indices])
         labels = np.zeros(shape)
@@ -269,6 +268,11 @@ class IlastikStorageVersion01(object):
                 return block[()]
 
     def tile(self, item_index, tile_slice):
+        '''
+        Order is (Z, Y, X, C) where C size of C dimension
+        is always 1 (only one label channel implemented, i.e.
+        currently no overlapping label regions supported)
+        '''
 
         sel = self._blocks_in_tile(item_index, tile_slice)
 

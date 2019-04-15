@@ -10,9 +10,10 @@ stages:
   - deploy
 
 install:
-  image: yapic-nopython
+  image: python:3.6
   stage: test
   script:
+    - pip intall --upgrade pip
     - pip install Cython nose  
-    - pip install --process-dependency-links ${CI_PROJECT_DIR}
+    - pip install ${CI_PROJECT_DIR}
     - nosetests ${CI_PROJECT_DIR}/.

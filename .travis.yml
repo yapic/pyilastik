@@ -1,0 +1,11 @@
+language: python
+python:
+  - "3.6"
+
+# command to install dependencies
+install:
+  - pip install Cython nose
+  - pip install .
+# command to run tests
+script:
+  - nosetests

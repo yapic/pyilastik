@@ -19,7 +19,7 @@ def readme():
 
 
 setup(name='pyilastik',
-      version='0.0.2',
+      version='0.0.3',
       description='Read ilastik labels in python',
       author='Manuel Schoelling',
       author_email='manuel.schoelling@dzne.de',

@@ -4,10 +4,17 @@ python:
 
 # command to install dependencies
 install:
-  - pip install Cython nose
-  - pip install git+http://github.com/yapic/lzw-decompressor.git@master
-  - pip install git+http://github.com/yapic/bigtiff.git@master
+  - pip installnose
   - pip install .
 # command to run tests
 script:
   - nosetests
+
+deploy:
+  provider: pypi
+  user: cmohl
+  password:
+    secure: mUhLhVQJ0No5nvSpX3xbXpZhqNSLhf7ecbVJ3sQlC5ZkCcun49rZEF0WS8uxgGiZVG8KtRgA0jRtbbNOfRwRZ1RORVZSRqMcmOb3rXIfnf5uqOkKn7DAHDZgt3lCTasltMDrfu7RPle+MmTxDHDJuV6X4JBPmdKaujpiG6MdTHMRVHVtiws1mL/ZV79ztO/yKXrg2d++4XNSOMXu9CLf7J4i1ljm8nlOjzni3/5UZPrPLyeih8FVUiuKKBVe+MeuWA0sc/3Pr28tImFfsN4iHLlxqf2AJhG9dSn411ZkXm7dPoPQ2vDmqA8bS4ZAIC97HupVPu3rjqJLTSv+a5FSt/zjdaZ6mdeNiKsZsgnWW+qBJyP4OG547G8D8wBkKQ62STzO6XI7JfH2W+m4DVuaIVWuYHsXSGPJioCc0tcga8tTJzQvFGqIPdqFMCbZ5AMo/93o8sp75xSCKd+QxYu31dBx9pHSf/GHle5BKhqaLxdSHjXYXdX65FGcvPfxlWC2S97buE2BcPHOR1oYIhVtgPyTPjIAkLroEZtZ8FOSkoRF4MoTC5h7WhFNBO0YRUMqfjWe8UwPS3Fh+ApTB7AFdWqoEjHPlfN/i8bIxqVNmfyoxUEKIW66PTdY1neckOGW+a4uu36fOpUioRpTJ1L5R4u5YI/nHJTV/D4QKgS3grE=
+  skip_cleanup: true
+  on:
+    all_branches: true

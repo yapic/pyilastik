@@ -1,20 +1,15 @@
 language: python
 python:
-  - "3.6"
-
-# command to install dependencies
+- '3.6'
 install:
-  - pip install nose
-  - pip install .
-# command to run tests
+- pip install nose
+- pip install .
 script:
-  - nosetests
-
+- nosetests
 deploy:
   provider: pypi
   user: cmohl
   password:
-    secure: ErhXeYH+Q42aJunebZ3Dpu6CvNyBIgcW6bWtS8Wcul267uACpxVL7NWQIqIvTHkE0Rms8iPcMAyRLUnoSeETG5IUX03ws15FKD6Z1gfvl+gJDXESXaK7l1NqxRXoolTJI/wQiDHeAkZeH9AGNivy7OI7zmcTZeCIO3V5taO2SWY6L4ZYQuOjD5OFc5xIFlyGN9i0T7krNqUws6zMUO7Hj1jhEEyR+vNVTPAjURkZQTQsCwgaJcQDZB7R2+NJPJUqYko+sJaWX+lfpbAi0h1FVaKLPgKlHqtVnrnfc328pcEXaLihtBnwpXd13aYOB7jkllb2atHGxDEU6Xpg8klFchSDWS5XY4jCCx6K3gQ1dNLZPKU0rWfB7AHGWxJhpBc6VJVD6z/Wjr+vJp/+SWE8O77MVbKKH2wqRmZudQJ5Smwd2j+XKvPgkPqnEKLbNPcwx06gIkfiDNMNpzwuMSb8XqpccTtjhj4mlSLCvnW9aouf4L6wxhdAloQuJEDsH7DQSxuU+dJapBaYyLazEIoHc6APUrRE75FbeV/9JFrvEUllRjf4TE4KPOtAPIJxo6CWkeX7O9doBoQUQElv2NDdzc5gNBTpTOCaMVjk7LYmM2ampo/9NPwlYEzkDL0fetq3rRRv27MuVNAWM8awrfSEyGJ3biuLSvo3BYDJelKABCs=
-    skip_cleanup: true
+    secure: TaZCKpu9HFr7/ZLS3OnyzXlCN3DxvKjm35KWoCl/CzwP3xoqJUk7se4AcZ7xWQjMOSab6gCPHgR8H66t6B+QNzp6cqyUQVVXM9tnB7mUWXSvzCGij7+SneavvAKnKs4EBHivUk9IFIXQ9UujcbptYtaDzs6vm2Qcpbh/LVRwaYStqRmcR9NfLBqSIyLlBTj5Yk3Q0nCFUfyEeP1cketQ4kw+ScUzrOnM1XqxWjwBsuYifZSiBzYcXwOO6LOoI5onFixV3bkb4xeP1BDEy+PiJ0xB/SQ0COnNDRtCrZe9ZuvuvcdKPHPJp6xksOI0K7ME9dLmJoRCO2rpWAKqtbJjDAoZNif5eMNdiqX2CbTBP2OvqfBcpWq6onyhZoUXV0tI0bNJ4tPsl76pQ7tYYQ39udWq2papQmIJ2s9T297k/k4RuphdYtt0aPbt1XQRZz7CwYR3pUFxgK3EtFgp19hR/rX7n1fRNl4SVdCtmgxsxTmFDyCC1B5MX8/NOVHQyBSISzXrFKvBGxrmaSTmG8Rj1ZyKycS2MOiPaM+1WSXOyEMMM+AqwgtKFzJA1FNCrV6voD0RtsYjz/tSKaKlguLf3PS0qB0jgKXEhsW/ujxcBTl8nnTLInRZ9F/uz24VoANvDRBuAHBMTPaoUYAUoovAdHxF3qePHDPLaz+P1rRpQgs=
   on:
     all_branches: true

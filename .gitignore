@@ -6,3 +6,6 @@ __pycache__
 ._.DS_Store
 .DS_Store
 ._*
+
+/dist/
+/build/

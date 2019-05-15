@@ -1,4 +1,4 @@
 h5py>=2.6.0
 numpy>=1.12.1
 docopt>=0.6.2
-bigtiff @ git+http://github.com/yapic/bigtiff.git@master
+bigtiff>=0.1.1

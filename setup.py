@@ -2,15 +2,10 @@ import os
 
 from setuptools import setup, find_packages
 
-try:  # for pip >= 10
-    from pip._internal.req import parse_requirements
-except ImportError:  # for pip <= 9.0.3
-    from pip.req import parse_requirements
-
-
-requirements_txt = os.path.join(os.path.dirname(__file__), 'requirements.txt')
-install_reqs = parse_requirements(requirements_txt, session=False)
-reqs = [str(ir.req) for ir in install_reqs]
+reqs = ['h5py>=2.6.0',
+        'numpy>=1.12.1',
+        'docopt>=0.6.2',
+        'bigtiff>=0.1.1']
 
 def readme():
     README_md = os.path.join(os.path.dirname(__file__), 'README.md')
@@ -19,7 +14,7 @@ def readme():
 
 
 setup(name='pyilastik',
-      version='0.0.4',
+      version='0.0.5',
       description='Read ilastik labels in python',
       author='Manuel Schoelling',
       author_email='manuel.schoelling@dzne.de',

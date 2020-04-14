@@ -1,11 +1,21 @@
-*egg-info
-*pyc
-__pycache__
+.cache/
+
+# compiled python files
+*.pyc
+*.npz
 
 # Mac specific files
 ._.DS_Store
 .DS_Store
 ._*
+.eggs/
 
-/dist/
+# Setuptools distribution folder.
+
 /build/
+/dist/
+pyilastik/tests/__pycache__/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+*.egg-info/

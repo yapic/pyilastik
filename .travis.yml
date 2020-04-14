@@ -9,7 +9,8 @@ script:
 deploy:
   provider: pypi
   user: cmohl
+  skip_cleanup: true
+  on:
+    tags: true
   password:
     secure: vv1M9RrGCzZCNEkBERwL9qFitwNAV/0xPEvExgjeKT37UHEvSdeflQzjrfcqnnzsmIopcHc8HOGgPEMf9r6Bqs8U5bVapky0l2m3//zPQRhs6b561ZyLx2ZOVq+ca0YUiQUU086Yv8VjeDaQOeAngp0d5Ty7W87IFX6v94KP2x2BObw3ZYKIoTivmkfbyF/li3KI6SnH2hBh3GHDJRBQrTz8e19zeeZIdzqmDg/E0kar4HLu5RnpsAnH5LFVTuQ2FOtSlW1HJ5NBWypl4jIRVL/BIG16FyQFsXAo7c52FFxKjFROzCwF38hVtGcvYLaE0cWzmnqzHfhlXzVO60Ha6DPinu6ZiSGbVfFb+BO3WckoVmevz/O8jqrQzjY0hXkkuRA+Av0XC5QJWgbNkQydUxXdyhd23/bN5pArznYylkfZ6SU4lr6kNZRirpXlPM9/P8mRPp3oLvkwayJfAiOxnZBS6TL/KrEqD3+SUjJGDqIrQAzJouU2CWVZKaGExD7M6+KxoPZe3u3mRNZCK1UfXoHljeRTf3jM7b/ydDGgFK55o2dLbdMZOnar0dxIZWou8fJvpUllHka6ra3XyA746x8LQALTDUBegKleLJvUjPhTZ+D4YKhJ8G8aXmJ+AYO3JVonr1Acwg+QPE6+EQpSlEL8G4ph9QbMW2NJc8tKfJA=
-    on:
-    tags: true

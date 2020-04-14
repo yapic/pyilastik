@@ -152,6 +152,7 @@ class TestLabelImportDimensions(TestCase):
         p = os.path.join(path, 'ilastik-1.3.ilp')
         ilp = pyilastik.read_project(p, skip_image=True)
         labels = ilp['ilastik-test-2-4-8.tif'][1][1]
+        print(ilp.ilastik_version())
 
         assert labels.shape == (8, 4, 2, 1)
         assert set(np.unique(labels)) == {0, 1, 2}
@@ -204,8 +205,27 @@ class TestLabelImportDimensions(TestCase):
 
 
 
+    def test_label_order_is_consistent_between_ilastik_versions(self):
+
+        item_index = 1
+        p12 = os.path.join(path, 'multiim/ilastik-multiim-1.2.ilp')
+        p133 = os.path.join(path, 'multiim/ilastik-multiim-1.3.3.ilp')
+        p132 = os.path.join(path, 'multiim/ilastik-multiim-1.3.2.ilp')
+
+        fname = 'pixels_ilastik-multiim-1.2/34width_28height_2slices_2channels.tif'
+
+        ilp12 = pyilastik.read_project(p12, skip_image=True)
+        (_, (_, labels_12, _)) = ilp12[fname]
 
 
+        ilp13 = pyilastik.read_project(p133, skip_image=True)
+        (_, (_, labels_133, _)) = ilp13[fname]
+
+        ilp132 = pyilastik.read_project(p132, skip_image=True)
+        (_, (_, labels_132, _)) = ilp132[fname]
+
+        assert_array_equal(labels_12, labels_133)
+        assert_array_equal(labels_12, labels_132)
 
     def test_tile(self):
 

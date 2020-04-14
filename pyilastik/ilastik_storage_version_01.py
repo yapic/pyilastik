@@ -85,6 +85,11 @@ class IlastikStorageVersion01(object):
             version = self.f.get('/Input Data/StorageVersion')[()]
         assert version == '0.2'
 
+    def ilastik_version(self):
+
+        version_str =  self.f.get('ilastikVersion')[()].decode()
+        return int(version_str.replace('.','')[:3])
+
     def __iter__(self):
         '''
         Returns `filename, (img, labels, prediction)`
@@ -133,6 +138,7 @@ class IlastikStorageVersion01(object):
         Returns `filename, (img, labels, prediction)` for the i'th image
         prediction is None if no prediction was made
         '''
+
         if type(i) == str:
             idx = self.image_path_list().index(i)
             return self[idx]
@@ -161,8 +167,16 @@ class IlastikStorageVersion01(object):
             # add z dimension if missing
             labels = np.expand_dims(labels, axis=0)
 
+        version = self.ilastik_version()
         if self.skip_image:
+            if version >= 133:
+                # if version>=1.3.3
+                labels = np.transpose(labels, (0, 2, 3, 1))
             return original_path, (None, labels, prediction)
+
+        msg = ('ilastik versions > 1.3.2 are not supported. '
+               'Set skip_image=True or use older ilastik version.')
+        assert version < 133, msg
 
         fname = utils.basename(path)
         if self.image_path is not None:
@@ -187,6 +201,7 @@ class IlastikStorageVersion01(object):
         padding[-1] = (0, 0)  # set padding for channel axis to 0
         labels = np.pad(labels, padding, mode='constant',
                         constant_values=0)
+
 
         return original_path, (img, labels, prediction)
 

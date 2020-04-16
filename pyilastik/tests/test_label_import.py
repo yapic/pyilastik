@@ -423,72 +423,6 @@ class TestLabelImportDimensions(TestCase):
         res = ils.normalize_dim_order(dim_order, data=data)
         assert res.shape == (8, 10, 1)
 
-    def test_tmp(self):
-
-        item_index = 1
-        p12 = os.path.join(path, 'multiim/ilastik-multiim-1.2.ilp')
-        p133 = os.path.join(path, 'multiim/ilastik-multiim-1.3.3.ilp')
-        p132 = os.path.join(path, 'multiim/ilastik-multiim-1.3.2.ilp')
-
-        fname = 'pixels_ilastik-multiim-1.2/34width_28height_2slices_2channels.tif'
-        tile_slice = np.array([[0, 2],
-                               [0, 20],
-                               [0, 20],
-                               [0, 1]])
-
-        ilp12 = pyilastik.read_project(p12, skip_image=True)
-        print('labelmat shape 12')
-        print(ilp12.shape_of_labelmatrix(1))
-        (_, (_, labels_12, _)) = ilp12[fname]
-        t12 = ilp12.tile_inner(1, tile_slice)
-        print(t12.shape)
-
-        ilp132 = pyilastik.read_project(p132, skip_image=True)
-        print('labelmat shape 132')
-        print(ilp132.shape_of_labelmatrix(1))
-        (_, (_, labels_132, _)) = ilp132[fname]
-        t132 = ilp132.tile_inner(1, tile_slice)
-        print(t132.shape)
-
-        ilp133 = pyilastik.read_project(p133, skip_image=True)
-        print('labelmat shape 133')
-        print(ilp133.shape_of_labelmatrix(1))
-        (_, (_, labels_133, _)) = ilp133[fname]
-        t133 = ilp133.tile_inner(1, tile_slice)
-        print(t133.shape)
-
-        print(ilp133.image_path_list())
-
-        tile_slice = np.array([[0, 8],
-                               [0, 10],
-                               [0, 1]])
-        p12flat = os.path.join(path, 'dimensionstest/x15_y10_z1_c1_classes2.ilp')
-        ilp12flat = pyilastik.read_project(p12flat, skip_image=True)
-        (_, (_, labels_12_flat, _)) = ilp12flat['x15_y10_z1_c1.tif']
-        t12flat = ilp12flat.tile_inner(0, tile_slice)
-        print('labelmat shape 12flat')
-        print(ilp12flat.shape_of_labelmatrix(0))
-        print(labels_12_flat.shape)
-
-
-        p133flat = os.path.join(path, 'dimensionstest/x15_y10_z1_c1_classes2_ilastik1.3.3.ilp')
-        ilp133flat = pyilastik.read_project(p133flat, skip_image=True)
-        print(ilp133flat.image_path_list())
-        (_, (_, labels_133_flat, _)) = ilp133flat['x15_y10_z1_c1.tif']
-        t133flat = ilp133flat.tile_inner(0, tile_slice)
-        print('labelmat shape 133flat')
-        print(ilp133flat.shape_of_labelmatrix(0))
-        print(labels_133_flat.shape)
-
-
-        assert_array_equal(t12flat, t133flat)
-
-        #assert_array_equal(t12, t132)
-        #assert_array_equal(t12, t133)
-        #assert False
-
-
-
     def test_tile(self):
 
         p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
@@ -499,7 +433,7 @@ class TestLabelImportDimensions(TestCase):
                                [0, 7],
                                [0, 1]])
 
-        t = ilp.tile_inner(0, tile_slice)
+        t = ilp.tile(0, tile_slice)
 
         val_1 = np.array([[0., 0., 0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0., 0., 0.],
@@ -519,7 +453,7 @@ class TestLabelImportDimensions(TestCase):
                                [157, 164],
                                [0, 1]])
 
-        t = ilp.tile_inner(0, tile_slice)
+        t = ilp.tile(0, tile_slice)
 
         val_2 = np.array([[0., 0., 0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0., 0., 0.],
@@ -538,7 +472,7 @@ class TestLabelImportDimensions(TestCase):
                                [50, 55],
                                [0, 1]])
 
-        t = ilp.tile_inner(0, tile_slice)
+        t = ilp.tile(0, tile_slice)
 
         val_3 = np.array([[0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0.],
@@ -559,7 +493,7 @@ class TestLabelImportDimensions(TestCase):
                                [0, 7],
                                [0, 1]])
 
-        t = ilp.tile_inner(0, tile_slice)
+        t = ilp.tile(0, tile_slice)
 
         val_1 = np.array([[0., 0., 0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0., 0., 0.],
@@ -579,7 +513,7 @@ class TestLabelImportDimensions(TestCase):
                                [157, 164],
                                [0, 1]])
 
-        t = ilp.tile_inner(0, tile_slice)
+        t = ilp.tile(0, tile_slice)
 
         val_2 = np.array([[0., 0., 0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0., 0., 0.],
@@ -598,7 +532,7 @@ class TestLabelImportDimensions(TestCase):
                                [50, 55],
                                [0, 1]])
 
-        t = ilp.tile_inner(0, tile_slice)
+        t = ilp.tile(0, tile_slice)
 
         val_3 = np.array([[0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0.],
@@ -607,10 +541,6 @@ class TestLabelImportDimensions(TestCase):
                           [0., 0., 0., 0., 0.]])
 
         assert_array_equal(t[0, :, :, 0], val_3)
-
-
-
-
 
     def test_tile_for_selected_blocks(self):
 
@@ -649,11 +579,6 @@ class TestLabelImportDimensions(TestCase):
         assert_array_equal(tile_1, val_1)
         assert_array_equal(tile_2, val_2)
 
-
-
-
-
-
     def test_is_overlap(self):
 
         tpl = np.array([[2, 13],
@@ -678,7 +603,6 @@ class TestLabelImportDimensions(TestCase):
         b9 = np.array([[0, 3],
                        [4, 7]])
 
-
         self.assertTrue(ils.is_overlap(tpl, b1))
         self.assertTrue(ils.is_overlap(tpl, b2))
         self.assertFalse(ils.is_overlap(tpl, b3))
@@ -694,8 +618,6 @@ class TestLabelImportDimensions(TestCase):
         b1 = np.array([[2, 3],
                        [4, 10]])
         self.assertTrue(ils.is_overlap(tpl, b1))
-        # assert False
-
 
     def test_tile_loc_from_slices(self):
 

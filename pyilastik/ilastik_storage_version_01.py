@@ -191,16 +191,12 @@ class IlastikStorageVersion01(object):
             # add z dimension if missing
             labels = np.expand_dims(labels, axis=0)
 
-        version = self.ilastik_version()
         if self.skip_image:
-            # if version >= 133:
-            #     # if version>=1.3.3
-            #     labels = np.transpose(labels, (0, 2, 3, 1))
             return original_path, (None, labels, prediction)
 
         msg = ('ilastik versions > 1.3.2 are not supported. '
                'Set skip_image=True or use older ilastik version.')
-        assert version < 133, msg
+        assert self.ilastik_version() < 133, msg
 
         fname = utils.basename(path)
         if self.image_path is not None:
@@ -362,13 +358,9 @@ class IlastikStorageVersion01(object):
                 return block[()]
 
     def tile(self, item_index, tile_slice):
-        # t = self.tile_inner(item_index, tile_slice)
-        # t_corrected = normalize_dim_order(self.original_dimension_order(),
-        #                                   data=t)
 
         ordering = list(normalize_dim_order(self.original_dimension_order(),
                                             reverse=True))
-
         slices_corr = tile_slice[ordering]
 
         t = self.tile_inner(item_index, slices_corr)

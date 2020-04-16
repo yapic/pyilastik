@@ -69,6 +69,27 @@ def _get_slices_for(p_pos, q_pos, p_shape, q_shape):
     return [slice(start, stop) for start, stop in q_slice]
 
 
+def normalize_dim_order(dim_order, data=None, reverse=False):
+    '''
+    transpose tile data to dimension order zyxc or yxc
+    '''
+    n_dims = len(dim_order)
+    assert n_dims in [3, 4]
+
+    ref_order = 'zyxc'
+    if n_dims == 3:
+        ref_order = 'yxc'
+
+    mapping = tuple([dim_order.find(k) for k in ref_order])
+    if reverse:
+        mapping = tuple([ref_order.find(k) for k in dim_order])
+    if data is None:
+        return mapping
+
+    assert n_dims == len(data.shape)
+    return np.transpose(data, mapping)
+
+
 class IlastikStorageVersion01(object):
 
     def __init__(self, h5_handle, image_path=None, prediction=False,
@@ -86,9 +107,8 @@ class IlastikStorageVersion01(object):
         assert version == '0.2'
 
     def ilastik_version(self):
-
-        version_str =  self.f.get('ilastikVersion')[()].decode()
-        return int(version_str.replace('.','')[:3])
+        version_str = self.f.get('ilastikVersion')[()].decode()
+        return int(version_str.replace('.', '')[:3])
 
     def __iter__(self):
         '''
@@ -153,12 +173,13 @@ class IlastikStorageVersion01(object):
         prediction = None  # TODO
 
         # 1st get the (approximate) labeled image size
-        shape = self.shape_of_labelmatrix(i)
+        shape = self.shape_of_original_labelmatrix(i)
         n_dims = len(shape)
 
         tile_slice = np.array([[0, s] for s in shape])
-
-        labels = self.tile(i, tile_slice)
+        labels = self.tile_inner(i, tile_slice)
+        labels = normalize_dim_order(self.original_dimension_order(),
+                                     data=labels)
 
         msg = 'dimensions of labelmatrix should be 4 (zyxc) or 3 (yxc)'
         assert n_dims in [3, 4], msg
@@ -169,9 +190,9 @@ class IlastikStorageVersion01(object):
 
         version = self.ilastik_version()
         if self.skip_image:
-            if version >= 133:
-                # if version>=1.3.3
-                labels = np.transpose(labels, (0, 2, 3, 1))
+            # if version >= 133:
+            #     # if version>=1.3.3
+            #     labels = np.transpose(labels, (0, 2, 3, 1))
             return original_path, (None, labels, prediction)
 
         msg = ('ilastik versions > 1.3.2 are not supported. '
@@ -202,7 +223,6 @@ class IlastikStorageVersion01(object):
         labels = np.pad(labels, padding, mode='constant',
                         constant_values=0)
 
-
         return original_path, (img, labels, prediction)
 
     def n_dims(self, item_index):
@@ -219,7 +239,51 @@ class IlastikStorageVersion01(object):
         else:
             return 0
 
+    def original_dimension_order(self):
+        '''
+        Dimension orders of label matrices depend on dimensionality
+        of the pixel dataset (zstack vs 2d, monochannel vs multichannel) and
+        the ilastik version. Dimension order handling was changed in
+        ilastik version 1.3.3 (both staorage version 01).
+
+        '''
+        s = self.shape_of_original_labelmatrix(0)
+
+        assert len(s) in [3, 4]
+
+        if len(s) == 4:
+
+            assert s[3] == 1 or s[1] == 1
+
+            if self.ilastik_version() < 133:
+                order = 'zyxc'
+            else:
+                if s[1] == 1:
+                    order = 'zcyx'
+                elif s[3] == 1:
+                    order = 'zyxc'
+        if len(s) == 3:
+            if self.ilastik_version() < 133:
+
+                assert s[2] == 1
+                order = 'yxc'
+            else:
+                assert s[0] == 1 or s[2] == 1
+                if s[0] == 1:
+                    order = 'cyx'
+                else:
+                    order = 'yxc'
+
+        return order
+
     def shape_of_labelmatrix(self, item_index):
+        original_shape = self.shape_of_original_labelmatrix(item_index)
+        dim_mapping = list(normalize_dim_order(
+            self.original_dimension_order()))
+
+        return original_shape[dim_mapping]
+
+    def shape_of_original_labelmatrix(self, item_index):
         '''
         Label matrix shape is retrieved from label data.
 
@@ -295,6 +359,22 @@ class IlastikStorageVersion01(object):
                 return block[()]
 
     def tile(self, item_index, tile_slice):
+        # t = self.tile_inner(item_index, tile_slice)
+        # t_corrected = normalize_dim_order(self.original_dimension_order(),
+        #                                   data=t)
+
+        ordering = list(normalize_dim_order(self.original_dimension_order(),
+                                            reverse=True))
+
+        slices_corr = tile_slice[ordering]
+
+        t = self.tile_inner(item_index, slices_corr)
+        t_corr = normalize_dim_order(self.original_dimension_order(),
+                                     reverse=False,
+                                     data=t)
+        return t_corr
+
+    def tile_inner(self, item_index, tile_slice):
         '''
         Order is (Z, Y, X, C) or (Y, X, C) where C size of C dimension
         is always 1 (only one label channel implemented, i.e.
@@ -320,7 +400,6 @@ class IlastikStorageVersion01(object):
         p_slice = _get_slices_for(pos_q, pos_p, shape_q, shape_p)
 
         labels_q[q_slice] = labels_p[p_slice]
-
         return labels_q
 
     @lru_cache(maxsize=None)

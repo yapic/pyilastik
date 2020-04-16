@@ -73,28 +73,15 @@ class TestLabelImportDimensions(TestCase):
         self.assertEqual(labels.shape, (2, 8, 10, 1))
         assert_array_equal(labels[:, :, :, 0], val_multi_z)
 
-        # print(np.transpose(labels, (3, 0, 2, 1)).astype(int))
-        # assert False
-
-
     def test_caching_of_block_slices(self):
 
         p = os.path.join(path, 'dimensionstest/x15_y10_z2_c4_classes2.ilp')
         ilp = pyilastik.read_project(p, skip_image=True)
 
-        s = np.array([[0, 2], [0, 10], [0, 15], [0, 1]])
-
         bs_before = ilp._get_block_slices(0).copy()
-        tile = ilp.tile(0, s)
         bs_after = ilp._get_block_slices(0)
         print(bs_before)
         assert_array_equal(bs_before, bs_after)
-
-
-
-
-
-
 
     def test_multi_channel_single_z(self):
 
@@ -162,7 +149,6 @@ class TestLabelImportDimensions(TestCase):
         localpath = os.path.join(path, 'purkinjetest')
         p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
 
-        #p = os.path.join(path, 'dimensionstest/x15_y10_z2_rgb_classes2.ilp')
         ilp = pyilastik.read_project(p, skip_image=True)
 
         b = ilp._get_block_slices(0)
@@ -176,7 +162,6 @@ class TestLabelImportDimensions(TestCase):
 
 
     def test_blocks_in_tile(self):
-
 
         localpath = os.path.join(path, 'purkinjetest')
         p = os.path.join(localpath, 'ilastik-1.2.2post1mac.ilp')
@@ -192,7 +177,6 @@ class TestLabelImportDimensions(TestCase):
         self.assertFalse(b[1])
         self.assertEqual(len(b), 2)
 
-
         p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
         ilp = pyilastik.read_project(p, skip_image=True)
 
@@ -203,20 +187,17 @@ class TestLabelImportDimensions(TestCase):
         assert_array_equal(ilp._blocks_in_tile(0, tile_slices),
                            np.array([True, False, False]))
 
-
-
     def test_label_order_is_consistent_between_ilastik_versions(self):
 
-        item_index = 1
         p12 = os.path.join(path, 'multiim/ilastik-multiim-1.2.ilp')
         p133 = os.path.join(path, 'multiim/ilastik-multiim-1.3.3.ilp')
         p132 = os.path.join(path, 'multiim/ilastik-multiim-1.3.2.ilp')
 
-        fname = 'pixels_ilastik-multiim-1.2/34width_28height_2slices_2channels.tif'
+        fname = \
+            'pixels_ilastik-multiim-1.2/34width_28height_2slices_2channels.tif'
 
         ilp12 = pyilastik.read_project(p12, skip_image=True)
         (_, (_, labels_12, _)) = ilp12[fname]
-
 
         ilp13 = pyilastik.read_project(p133, skip_image=True)
         (_, (_, labels_133, _)) = ilp13[fname]
@@ -226,6 +207,287 @@ class TestLabelImportDimensions(TestCase):
 
         assert_array_equal(labels_12, labels_133)
         assert_array_equal(labels_12, labels_132)
+
+    def test_tile_c1_z1(self):
+
+        tile_slice = np.array([[0, 8],
+                               [0, 10],
+                               [0, 1]])
+
+        p12flat = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c1_classes2.ilp')
+        ilp12flat = pyilastik.read_project(p12flat, skip_image=True)
+        (_, (_, labels_12_flat, _)) = ilp12flat['x15_y10_z1_c1.tif']
+        t12flat = ilp12flat.tile(0, tile_slice)
+        print('labelmat shape 12flat z1 c1')
+        print(ilp12flat.shape_of_labelmatrix(0))
+        print(labels_12_flat.shape)
+        ilp12flat.original_dimension_order()
+
+        p133flat = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c1_classes2_ilastik1.3.3.ilp')
+        ilp133flat = pyilastik.read_project(p133flat, skip_image=True)
+        print(ilp133flat.image_path_list())
+        (_, (_, labels_133_flat, _)) = ilp133flat['x15_y10_z1_c1.tif']
+        t133flat = ilp133flat.tile(0, tile_slice)
+        print('labelmat shape 133flat z1 c1')
+        print(ilp133flat.shape_of_labelmatrix(0))
+        print(labels_133_flat.shape)
+        ilp133flat.original_dimension_order()
+
+        assert_array_equal(t12flat, t133flat)
+        assert_array_equal(labels_12_flat, labels_133_flat)
+
+    def test_tile_c2_z1(self):
+
+        tile_slice = np.array([[0, 8],
+                               [0, 10],
+                               [0, 1]])
+
+        p12flat = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c2_classes2.ilp')
+        ilp12flat = pyilastik.read_project(p12flat, skip_image=True)
+        t12flat = ilp12flat.tile(0, tile_slice)
+        ilp12flat.original_dimension_order()
+
+        p133flat = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c2_classes2_ilastik1.3.3.ilp')
+        ilp133flat = pyilastik.read_project(p133flat, skip_image=True)
+        t133flat = ilp133flat.tile(0, tile_slice)
+
+        assert_array_equal(t12flat, t133flat)
+
+    def test_tile_c1_z2(self):
+
+        tile_slice = np.array([[0, 2],
+                               [0, 8],
+                               [0, 10],
+                               [0, 1]])
+
+        p12flat = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c1_classes2.ilp')
+        ilp12flat = pyilastik.read_project(p12flat, skip_image=True)
+        t12flat = ilp12flat.tile(0, tile_slice)
+
+        p133flat = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c1_classes2_ilastik1.3.3.ilp')
+        ilp133flat = pyilastik.read_project(p133flat, skip_image=True)
+        t133flat = ilp133flat.tile(0, tile_slice)
+
+        assert_array_equal(t12flat, t133flat)
+
+    def test_tile_c4_z2(self):
+
+        tile_slice = np.array([[0, 2],
+                               [0, 8],
+                               [0, 10],
+                               [0, 1]])
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c4_classes2.ilp')
+        ilp12 = pyilastik.read_project(p, skip_image=True)
+        t12 = ilp12.tile(0, tile_slice)
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c4_classes2_ilastik1.3.3.ilp')
+        ilp133 = pyilastik.read_project(p, skip_image=True)
+        t133 = ilp133.tile(0, tile_slice)
+
+        assert_array_equal(t12, t133)
+
+    def test_get_labels(self):
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c4_classes2.ilp')
+        ilp12 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_12, _)) = ilp12[0]
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c4_classes2_ilastik1.3.3.ilp')
+        ilp133 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_133, _)) = ilp133[0]
+        print(labels_12.shape)
+        print(labels_133.shape)
+        assert_array_equal(labels_133, labels_12)
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c1_classes2.ilp')
+        ilp12 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_12, _)) = ilp12[0]
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c1_classes2_ilastik1.3.3.ilp')
+        ilp133 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_133, _)) = ilp133[0]
+        assert_array_equal(labels_133, labels_12)
+
+        p = os.path.join(path, 'dimensionstest/x15_y10_z1_c2_classes2.ilp')
+        ilp12 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_12, _)) = ilp12[0]
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c2_classes2_ilastik1.3.3.ilp')
+        ilp133 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_133, _)) = ilp133[0]
+        assert_array_equal(labels_133, labels_12)
+
+        p = os.path.join(path, 'dimensionstest/x15_y10_z2_c1_classes2.ilp')
+        ilp12 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_12, _)) = ilp12[0]
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c1_classes2_ilastik1.3.3.ilp')
+        ilp133 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_133, _)) = ilp133[0]
+        assert_array_equal(labels_133, labels_12)
+
+        p = os.path.join(path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
+        ilp12 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_12, _)) = ilp12[0]
+        p = os.path.join(
+            path, 'dimensionstest/x502_y251_z5_c1_classes2_ilastik1.3.3.ilp')
+        ilp133 = pyilastik.read_project(p, skip_image=True)
+        (_, (_, labels_133, _)) = ilp133[0]
+        assert_array_equal(labels_133, labels_12)
+
+    def test_original_dimension_order(self):
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c4_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'zyxc'
+
+        p = os.path.join(
+             path, 'dimensionstest/x15_y10_z2_c4_classes2_ilastik1.3.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'zcyx'
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c1_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'yxc'
+
+        p = os.path.join(
+             path, 'dimensionstest/x15_y10_z1_c1_classes2_ilastik1.3.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'yxc'
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z1_c2_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        print('z1 c2 1.2.2')
+        assert ilp.original_dimension_order() == 'yxc'
+
+        p = os.path.join(
+             path, 'dimensionstest/x15_y10_z1_c2_classes2_ilastik1.3.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        print('z1 c2 1.3.3')
+        assert ilp.original_dimension_order() == 'cyx'
+
+        p = os.path.join(
+            path, 'dimensionstest/x15_y10_z2_c1_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'zyxc'
+
+        p = os.path.join(
+             path, 'dimensionstest/x15_y10_z2_c1_classes2_ilastik1.3.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'zyxc'
+
+        p = os.path.join(
+            path, 'dimensionstest/x502_y251_z5_c1_classes2.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'zyxc'
+
+        p = os.path.join(
+             path, 'dimensionstest/x502_y251_z5_c1_classes2_ilastik1.3.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+        assert ilp.original_dimension_order() == 'zyxc'
+
+    def test_normalize_dim_order(self):
+
+        dim_order = 'cyx'
+        res = ils.normalize_dim_order(dim_order)
+        assert res == (1, 2, 0)
+
+        data = np.zeros((1, 5, 4))
+        res = ils.normalize_dim_order(dim_order, data=data)
+        assert res.shape == (5, 4, 1)
+
+        dim_order = 'zcyx'
+        res = ils.normalize_dim_order(dim_order)
+        assert res == (0, 2, 3, 1)
+
+        data = np.zeros((3, 1, 5, 4))
+        res = ils.normalize_dim_order(dim_order, data=data)
+        assert res.shape == (3, 5, 4, 1)
+
+        dim_order = 'cyx'
+        data = np.zeros((1, 8, 10))
+        res = ils.normalize_dim_order(dim_order, data=data)
+        assert res.shape == (8, 10, 1)
+
+    def test_tmp(self):
+
+        item_index = 1
+        p12 = os.path.join(path, 'multiim/ilastik-multiim-1.2.ilp')
+        p133 = os.path.join(path, 'multiim/ilastik-multiim-1.3.3.ilp')
+        p132 = os.path.join(path, 'multiim/ilastik-multiim-1.3.2.ilp')
+
+        fname = 'pixels_ilastik-multiim-1.2/34width_28height_2slices_2channels.tif'
+        tile_slice = np.array([[0, 2],
+                               [0, 20],
+                               [0, 20],
+                               [0, 1]])
+
+        ilp12 = pyilastik.read_project(p12, skip_image=True)
+        print('labelmat shape 12')
+        print(ilp12.shape_of_labelmatrix(1))
+        (_, (_, labels_12, _)) = ilp12[fname]
+        t12 = ilp12.tile_inner(1, tile_slice)
+        print(t12.shape)
+
+        ilp132 = pyilastik.read_project(p132, skip_image=True)
+        print('labelmat shape 132')
+        print(ilp132.shape_of_labelmatrix(1))
+        (_, (_, labels_132, _)) = ilp132[fname]
+        t132 = ilp132.tile_inner(1, tile_slice)
+        print(t132.shape)
+
+        ilp133 = pyilastik.read_project(p133, skip_image=True)
+        print('labelmat shape 133')
+        print(ilp133.shape_of_labelmatrix(1))
+        (_, (_, labels_133, _)) = ilp133[fname]
+        t133 = ilp133.tile_inner(1, tile_slice)
+        print(t133.shape)
+
+        print(ilp133.image_path_list())
+
+        tile_slice = np.array([[0, 8],
+                               [0, 10],
+                               [0, 1]])
+        p12flat = os.path.join(path, 'dimensionstest/x15_y10_z1_c1_classes2.ilp')
+        ilp12flat = pyilastik.read_project(p12flat, skip_image=True)
+        (_, (_, labels_12_flat, _)) = ilp12flat['x15_y10_z1_c1.tif']
+        t12flat = ilp12flat.tile_inner(0, tile_slice)
+        print('labelmat shape 12flat')
+        print(ilp12flat.shape_of_labelmatrix(0))
+        print(labels_12_flat.shape)
+
+
+        p133flat = os.path.join(path, 'dimensionstest/x15_y10_z1_c1_classes2_ilastik1.3.3.ilp')
+        ilp133flat = pyilastik.read_project(p133flat, skip_image=True)
+        print(ilp133flat.image_path_list())
+        (_, (_, labels_133_flat, _)) = ilp133flat['x15_y10_z1_c1.tif']
+        t133flat = ilp133flat.tile_inner(0, tile_slice)
+        print('labelmat shape 133flat')
+        print(ilp133flat.shape_of_labelmatrix(0))
+        print(labels_133_flat.shape)
+
+
+        assert_array_equal(t12flat, t133flat)
+
+        #assert_array_equal(t12, t132)
+        #assert_array_equal(t12, t133)
+        #assert False
+
+
 
     def test_tile(self):
 
@@ -237,7 +499,7 @@ class TestLabelImportDimensions(TestCase):
                                [0, 7],
                                [0, 1]])
 
-        t = ilp.tile(0, tile_slice)
+        t = ilp.tile_inner(0, tile_slice)
 
         val_1 = np.array([[0., 0., 0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0., 0., 0.],
@@ -257,7 +519,7 @@ class TestLabelImportDimensions(TestCase):
                                [157, 164],
                                [0, 1]])
 
-        t = ilp.tile(0, tile_slice)
+        t = ilp.tile_inner(0, tile_slice)
 
         val_2 = np.array([[0., 0., 0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0., 0., 0.],
@@ -276,7 +538,7 @@ class TestLabelImportDimensions(TestCase):
                                [50, 55],
                                [0, 1]])
 
-        t = ilp.tile(0, tile_slice)
+        t = ilp.tile_inner(0, tile_slice)
 
         val_3 = np.array([[0., 0., 0., 0., 0.],
                           [0., 0., 0., 0., 0.],
@@ -285,6 +547,67 @@ class TestLabelImportDimensions(TestCase):
                           [0., 0., 0., 0., 0.]])
 
         assert_array_equal(t[0, :, :, 0], val_3)
+
+    def test_tile_ilastik133(self):
+
+        p = os.path.join(
+            path, 'dimensionstest/x502_y251_z5_c1_classes2_ilastik1.3.3.ilp')
+        ilp = pyilastik.read_project(p, skip_image=True)
+
+        tile_slice = np.array([[0, 1],
+                               [0, 10],
+                               [0, 7],
+                               [0, 1]])
+
+        t = ilp.tile_inner(0, tile_slice)
+
+        val_1 = np.array([[0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 1., 1., 1., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.]])
+
+        assert_array_equal(t[0, :, :, 0], val_1)
+
+        tile_slice = np.array([[0, 1],
+                               [92, 101],
+                               [157, 164],
+                               [0, 1]])
+
+        t = ilp.tile_inner(0, tile_slice)
+
+        val_2 = np.array([[0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.],
+                          [0., 0., 1., 1., 1., 1., 0.],
+                          [0., 0., 1., 1., 1., 1., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 2., 2., 0., 0., 0.],
+                          [0., 0., 0., 0., 0., 0., 0.]])
+
+        assert_array_equal(t[0, :, :, 0], val_2)
+
+        tile_slice = np.array([[0, 1],
+                               [50, 55],
+                               [50, 55],
+                               [0, 1]])
+
+        t = ilp.tile_inner(0, tile_slice)
+
+        val_3 = np.array([[0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.],
+                          [0., 0., 0., 0., 0.]])
+
+        assert_array_equal(t[0, :, :, 0], val_3)
+
 
 
 

@@ -178,8 +178,11 @@ class IlastikStorageVersion01(object):
 
         tile_slice = np.array([[0, s] for s in shape])
         labels = self.tile_inner(i, tile_slice)
-        labels = normalize_dim_order(self.original_dimension_order(),
-                                     data=labels)
+
+        if len(labels) > 0:
+            labels = normalize_dim_order(
+                        self.original_dimension_order(),
+                        data=labels)
 
         msg = 'dimensions of labelmatrix should be 4 (zyxc) or 3 (yxc)'
         assert n_dims in [3, 4], msg

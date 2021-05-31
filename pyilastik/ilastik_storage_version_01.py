@@ -3,7 +3,6 @@ import re
 import functools
 import warnings
 import numpy as np
-# from bigtiff import Tiff
 import pyilastik.utils as utils
 from functools import lru_cache
 
@@ -41,15 +40,7 @@ def imread(path):
     reads tiff image in dimension order zyxc
     '''
 
-    # slices = Tiff.memmap_tcz(path)
     slices = memmap(path)
-
-    # img = []
-    # for C in range(slices.shape[1]):
-    #     img.append(np.stack([s for s in slices[0, C, :]]))
-    # img = np.stack(img)
-    # img = np.moveaxis(img, (0, 1, 2, 3), (3, 0, 1, 2))
-    # return img
     return fix_dims(slices, path)
 
 

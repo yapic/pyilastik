@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 reqs = ['h5py==2.10.0',
         'numpy>=1.12.1',
         'docopt>=0.6.2',
-        'bigtiff>=0.1.1']
+        'tifffile']
 
 def readme():
     README_md = os.path.join(os.path.dirname(__file__), 'README.md')

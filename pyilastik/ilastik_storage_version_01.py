@@ -3,13 +3,37 @@ import re
 import functools
 import warnings
 import numpy as np
-from bigtiff import Tiff
+# from bigtiff import Tiff
 import pyilastik.utils as utils
 from functools import lru_cache
+
+from tifffile import memmap, TiffFile
 
 # image shape: (?,?,H,W,C), e.g. (1, 1, 2098, 2611, 3)
 # labels shape: (?,?,H,W,1), e.g. (1, 1, 2098, 2611, 1), 0 == unlabeled
 # prediction shape: (?,?,H,W,L), e.g. (1, 1, 2098, 2611, 3)
+
+
+def fix_dims(memmap_array, path):
+    """"""
+    # target dims (Z,Y,X,C)
+    with TiffFile(path) as tif:
+        axes = tif.series[0].axes
+
+    # Adding the missed axis
+    # changing S for C (some metadata has S as channels)
+    axes = axes.translate(axes.maketrans('S', 'C'))
+    if 'C' not in axes:
+        memmap_array = np.expand_dims(memmap_array, axis=-1)
+        axes += 'C'
+    if 'Z' not in axes:
+        memmap_array = np.expand_dims(memmap_array, axis=0)
+        axes = 'Z' + axes
+
+    # Sorting the axes
+    dim_map = ['ZYXC'.index(dim) for dim in axes]
+    memmap_array = np.moveaxis(memmap_array, (0, 1, 2, 3), dim_map)
+    return memmap_array
 
 
 def imread(path):
@@ -17,14 +41,16 @@ def imread(path):
     reads tiff image in dimension order zyxc
     '''
 
-    slices = Tiff.memmap_tcz(path)
+    # slices = Tiff.memmap_tcz(path)
+    slices = memmap(path)
 
-    img = []
-    for C in range(slices.shape[1]):
-        img.append(np.stack([s for s in slices[0, C, :]]))
-    img = np.stack(img)
-    img = np.moveaxis(img, (0, 1, 2, 3), (3, 0, 1, 2))
-    return img
+    # img = []
+    # for C in range(slices.shape[1]):
+    #     img.append(np.stack([s for s in slices[0, C, :]]))
+    # img = np.stack(img)
+    # img = np.moveaxis(img, (0, 1, 2, 3), (3, 0, 1, 2))
+    # return img
+    return fix_dims(slices, path)
 
 
 def is_overlap(tile_pos, block_pos):

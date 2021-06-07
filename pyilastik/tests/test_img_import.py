@@ -4,7 +4,6 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import pyilastik
 from pyilastik.ilastik_storage_version_01 import imread
-from bigtiff import Tiff, PlaceHolder
 data_path = path = os.path.join(os.path.dirname(__file__),
                                 'data/dimensionstest')
 

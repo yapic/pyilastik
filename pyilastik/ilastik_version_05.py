@@ -21,7 +21,7 @@ class IlastikVersion05(object):
         f = self.f
         dset = f.get('/DataSets/dataItem{:02}'.format(i))
 
-        path = utils.basename(dset.attrs['fileName'].decode('ascii'))
+        path = utils.basename(dset.attrs['fileName'])
         img = np.array(dset.get('data')) if not self.skip_image else None
         labels = np.array(dset.get('labels/data'))
 

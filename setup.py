@@ -2,7 +2,7 @@ import os
 
 from setuptools import setup, find_packages
 
-reqs = ['h5py==2.10.0',
+reqs = ['h5py>=2.10.0',
         'numpy>=1.12.1',
         'docopt>=0.6.2',
         'tifffile']
@@ -14,7 +14,7 @@ def readme():
 
 
 setup(name='pyilastik',
-      version='0.0.9',
+      version='0.1.0',
       description='Read ilastik labels in python',
       author='Manuel Schoelling, Christoph Moehl',
       author_email='manuel.schoelling@dzne.de, christoph.oliver.moehl@gmail.com',

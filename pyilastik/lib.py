@@ -18,7 +18,7 @@ def read_project(ilastik_file, image_path=None, prediction=False,
     version = f.get('/PixelClassification/StorageVersion')
     if version is not None:
         try:
-            version = version[()].decode()
+            version = version[()]
         except AttributeError:
             # for ilastik releases >1.3.0
             version = version[()]

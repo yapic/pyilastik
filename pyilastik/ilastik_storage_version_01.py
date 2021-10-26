@@ -117,14 +117,14 @@ class IlastikStorageVersion01(object):
         self.skip_image = skip_image
 
         try:
-            version = self.f.get('/Input Data/StorageVersion')[()].decode()
+            version = self.f.get('/Input Data/StorageVersion')[()]
         except AttributeError:
             # for ilastik release > 1.3.0
             version = self.f.get('/Input Data/StorageVersion')[()]
         assert version == '0.2'
 
     def ilastik_version(self):
-        version_str = self.f.get('ilastikVersion')[()].decode()
+        version_str = self.f.get('ilastikVersion')[()]
         return int(version_str.replace('.', '')[:3])
 
     def __iter__(self):
@@ -164,7 +164,7 @@ class IlastikStorageVersion01(object):
 
             path = self.f.get(
                 '/Input Data/infos/{lane}/Raw Data/filePath'.format(lane=lane))
-            path = path[()].decode()
+            path = path[()]
 
             path_list.append(path)
 
@@ -184,7 +184,7 @@ class IlastikStorageVersion01(object):
         lane = 'lane{:04}'.format(i)
         path = f.get(
             '/Input Data/infos/{lane}/Raw Data/filePath'.format(lane=lane))
-        path = path[()].decode()
+        path = path[()]
         original_path = path
 
         prediction = None  # TODO
@@ -419,7 +419,7 @@ class IlastikStorageVersion01(object):
         slice_list = []
         for block in self._get_blocks(item_index):
             slices = re.findall('([0-9]+):([0-9]+)',
-                                block.attrs['blockSlice'].decode('ascii'))
+                                block.attrs['blockSlice'])
             slice_list.append(slices)
 
         return np.array(slice_list).astype('int')

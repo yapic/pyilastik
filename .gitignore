@@ -1,4 +1,6 @@
+# Auxiliary directories
 .cache/
+.vscode/
 
 # compiled python files
 *.pyc
